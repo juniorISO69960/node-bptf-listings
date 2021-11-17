@@ -19,12 +19,12 @@
   },
   "homepage": "https://github.com/TF2Autobot/node-bptf-listings-2#readme",
   "dependencies": {
+    "@tf2autobot/tf2-currencies": "^2.0.1",
     "@tf2autobot/tf2-sku": "^2.0.3",
     "async": "^3.2.1",
     "events": "^3.3.0",
     "request-retry-dayjs": "^1.1.0",
     "steamid": "^2.0.0",
-    "tf2-currencies-2": "^2.0.1",
     "util": "^0.12.4"
   },
   "devDependencies": {}

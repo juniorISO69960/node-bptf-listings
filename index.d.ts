@@ -1,8 +1,8 @@
 
 import { EventEmitter } from 'events';
-import SchemaManager from 'tf2-schema-2';
+import SchemaManager from '@tf2autobot/tf2-schema';
 import SteamID from 'steamid';
-import TF2Currencies from 'tf2-currencies-2';
+import TF2Currencies from '@tf2autobot/tf2-currencies';
 
 declare class ListingManager extends EventEmitter {
     static EFailiureReason: Record<string, unknown>;

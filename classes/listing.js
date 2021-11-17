@@ -1,5 +1,5 @@
 const SteamID = require('steamid');
-const Currencies = require('tf2-currencies-2');
+const Currencies = require('@tf2autobot/tf2-currencies');
 const SKU = require('@tf2autobot/tf2-sku');
 
 const pistolSkins = new Map();
