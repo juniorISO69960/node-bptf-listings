@@ -1,6 +1,6 @@
 const async = require('async');
-const BptfListings = require('bptf-listings');
-const Schema = require('tf2-schema');
+const BptfListings = require('bptf-listings-2');
+const Schema = require('tf2-schema-2');
 
 // See https://github.com/Nicklason/node-tf2-schema/tree/master/examples for examples on how to use / set up tf2-schema
 const schemaManager = new Schema({ apiKey: 'your steam api key' });

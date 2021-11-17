@@ -1,4 +1,4 @@
-const TF2Currencies = require('tf2-currencies');
+const TF2Currencies = require('tf2-currencies-2');
 
 // Search for a buy order for a Mann Co. Supply Crate Key
 const match = listingManager.findListing('5021;6', 0, true);
