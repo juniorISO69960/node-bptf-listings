@@ -17,7 +17,7 @@ class ListingManager {
      * @param {String} options.token The access token of the account being managed
      * @param {String} options.steamid The steamid of the account being managed
      * @param {String} options.userAgent The User-Agent header to be sent to bptf
-     * @param {String} options.userID The cookie we get from bptf-login-2
+     * @param {String} options.userID The cookie we get from bptf-login
      * @param {Number} [options.waitTime=10000] Time to wait before processing the queues
      * @param {Number} [options.batchSize=50]
      * @param {Object} options.schema Schema from the tf2-schema module (schemaManager.schema)
@@ -398,7 +398,7 @@ class ListingManager {
         request(options, (err, response, body) => {
             if (err) {
                 this.emit('updateListingsError', err);
-                return callback(err);
+                return;
             }
             this.emit('updateListingsSuccessful', response);
 
