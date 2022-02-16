@@ -18,8 +18,8 @@ class ListingManager {
      * @param {String} options.steamid The steamid of the account being managed
      * @param {String} options.userAgent The User-Agent header to be sent to bptf
      * @param {String} options.userID The cookie we get from bptf-login
-     * @param {Number} [options.waitTime=10000] Time to wait before processing the queues
-     * @param {Number} [options.batchSize=50]
+     * @param {Number} [options.waitTime=6000] Time to wait before processing the queues
+     * @param {Number} [options.batchSize=100]
      * @param {Object} options.schema Schema from the tf2-schema module (schemaManager.schema)
      */
     constructor(options) {
@@ -33,11 +33,11 @@ class ListingManager {
         this.userID = options.userID;
 
         // Time to wait before sending request after enqueing action
-        // Set default to 10 seconds:
-        // Update September 1st, 2021: "Request limit exceeded: this endpoint only allows 15 calls per 60 seconds per user account. Try again in x seconds."
-        this.waitTime = options.waitTime || 10000;
+        // Set default to 6 seconds:
+        // V2 api batch is rate limited to 10 req/minute.
+        this.waitTime = options.waitTime || 6000;
         // Amount of listings to create at once
-        this.batchSize = options.batchSize || 50;
+        this.batchSize = options.batchSize || 100;
 
         this.cap = null;
         this.promotes = null;
@@ -698,7 +698,7 @@ class ListingManager {
 
         const options = {
             method: 'POST',
-            url: 'https://backpack.tf/api/classifieds/list/v1',
+            url: 'https://backpack.tf/api/v2/classifieds/listings/batch',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -706,14 +706,13 @@ class ListingManager {
             qs: {
                 token: this.token
             },
-            body: {
-                listings: batch
-            },
+            body: batch,
             json: true,
             gzip: true
         };
 
         request(options, (err, response, body) => {
+            //TODO response
             if (err) {
                 this.emit('createListingsError', err);
                 return callback(err);
