@@ -1048,6 +1048,18 @@ class ListingManager {
                 float_value: item.killstreak
             });
         }
+        if (typeof item.killstreaker === 'number') {
+            formatItem['attributes'].push({
+                defindex: 2013,
+                float_value: item.killstreak
+            });
+        }
+        if (typeof item.sheen === 'number') {
+            formatItem['attributes'].push({
+                defindex: 2014,
+                float_value: item.killstreak
+            });
+        }
 
         if (item.australium) {
             formatItem['attributes'].push({
