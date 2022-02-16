@@ -1086,7 +1086,7 @@ class ListingManager {
             }
         }
 
-        if (item.paintkit) {
+        if (typeof item.paintkit === 'number') {
             formatItem['attributes'].push({
                 defindex: 834,
                 float_value: item.paintkit
