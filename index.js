@@ -806,7 +806,7 @@ class ListingManager {
 
         const options = {
             method: 'DELETE',
-            url: 'https://backpack.tf/api/classifieds/delete/v1',
+            url: 'https://backpack.tf/api/classifieds/delete/v1', //keep using old api, as it does not seem to have any item limit
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -865,7 +865,7 @@ class ListingManager {
     deleteAllListings(intent, callback) {
         const options = {
             method: 'DELETE',
-            url: `https://backpack.tf/api/classifieds/listings/`,
+            url: `https://backpack.tf/api/classifieds/listings/`, //keep using old, as it is not so heavily rate limited
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
