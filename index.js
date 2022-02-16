@@ -1136,6 +1136,68 @@ class ListingManager {
                 float_value: item.target
             });
         }
+        if (item.output) { // Killstreak fabs/chemistry sets
+            const recipe = {
+                "defindex": 2000, // recipe component defined item 1
+                "is_output": true,
+                "quantity": 1, //output quantity ?
+                "itemdef": item.output, //out KS kit id
+                "quality": item.outputQuality || 6, //out KS kit quality
+                "attributes": [ // this is just the same as in definition of killstreak kit
+                    {
+                        "defindex": 2012, // tool target item
+                        "float_value": item.target
+                    }
+                ]
+            };
+            if(item.sheen) {
+                recipe.attributes.push({
+                    "defindex": 2014, //killstreak sheen
+                    "float_value": item.sheen
+                });
+            }
+            if(item.killstreaker) {
+                recipe.attributes.push({
+                    "defindex": 2013, //killstreak effect (for professional KS)
+                    "float_value": item.killstreaker
+                });
+            }
+            formatItem['attributes'].push(recipe);
+        }
+
+        //Spells
+        if(typeof item.spell?.[1004] === 'number') {
+            formatItem['attributes'].push({
+                defindex: 1004,
+                float_value: item.spell[1004]
+            });
+        }
+        if(typeof item.spell?.[1005] === 'number') {
+            formatItem['attributes'].push({
+                defindex: 1005,
+                float_value: item.spell[1005]
+            });
+        }
+        if(item.spell?.[1006]) {
+            formatItem['attributes'].push({
+                defindex: 1006
+            });
+        }
+        if(item.spell?.[1007]) {
+            formatItem['attributes'].push({
+                defindex: 1007
+            });
+        }
+        if(item.spell?.[1008]) {
+            formatItem['attributes'].push({
+                defindex: 1008
+            });
+        }
+        if(item.spell?.[1009]) {
+            formatItem['attributes'].push({
+                defindex: 1009
+            });
+        }
 
         // TODO: Chemistry Sets, Fabricators
         // TODO: Validate, test
