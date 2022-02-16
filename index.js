@@ -1199,9 +1199,27 @@ class ListingManager {
             });
         }
 
-        // TODO: Chemistry Sets, Fabricators
+        //Strange parts
+        if(item.parts?.[0]) {
+            formatItem['attributes'].push({
+                "defindex": 380, //Strange PART 1
+                "float_value": item.parts?.[0]
+            });
+        }
+        if(item.parts?.[1]) {
+            formatItem['attributes'].push({
+                "defindex": 382, //Strange PART 2
+                "float_value": item.parts?.[1]
+            });
+        }
+        if(item.parts?.[2]) {
+            formatItem['attributes'].push({
+                "defindex": 384, //Strange PART 3
+                "float_value": item.parts?.[2]
+            });
+        }
+
         // TODO: Validate, test
-        // TODO: Support for StrangeParts, Spells, Killstreak Sheen/Killstreaker
 
         if (formatItem['attributes'].length === 0) {
             delete formatItem['attributes'];
