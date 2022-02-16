@@ -863,6 +863,7 @@ class ListingManager {
      * @param {Function} callback
      */
     deleteAllListings(intent, callback) {
+        //TODO: ARCHIVED LISTINGS + ratelimit - 60 sec
         const options = {
             method: 'DELETE',
             url: `https://backpack.tf/api/classifieds/listings/`, //keep using old, as it is not so heavily rate limited
