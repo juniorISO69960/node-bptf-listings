@@ -381,7 +381,7 @@ class ListingManager {
             throw new Error('Module has not been successfully initialized');
         }
         const options = {
-            method: "PATCH",
+            method: 'PATCH',
             url: `https://backpack.tf/api/v2/classifieds/listings/${id}`,
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
@@ -402,14 +402,16 @@ class ListingManager {
             }
             this.emit('updateListingsSuccessful', response);
 
-            const index = this.listings.findIndex((listing) => listing.id===id);
-            if(index >= 0) {
-                for(const key in properties){
-                    if(!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
-                    if(!Object.prototype.hasOwnProperty.call(properties, key)) return;
+            const index = this.listings.findIndex(listing => listing.id === id);
+            if (index >= 0) {
+                for (const key in properties) {
+                    if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
+                    if (!Object.prototype.hasOwnProperty.call(properties, key)) return;
                     this.listings[index][key] = properties[key];
                 }
-                this._listings[this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id] = this.listings[index];
+                this._listings[
+                    this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
+                ] = this.listings[index];
             }
         });
     }
@@ -906,7 +908,7 @@ class ListingManager {
                 return null;
             }
 
-            const item = this._formatItem(listing.sku);
+            const item = this._formatItem(listing.sku, listing.amount);
             if (item === null) {
                 return null;
             }
@@ -970,7 +972,7 @@ class ListingManager {
      * @param {String} sku
      * @return {Object} Returns the formatted item, null if the item does not exist
      */
-    _formatItem(sku) {
+    _formatItem(sku, amount) {
         const item = SKU.fromString(sku);
 
         const schemaItem = this.schema.getItemByDefindex(item.defindex);
@@ -1023,73 +1025,117 @@ class ListingManager {
             item.outputQuality !== null;
 
         const isKillstreakKit = nameLowered.includes('kit') && item.killstreak !== 0 && item.target !== null;
-        const isGenericKillstreakKit = nameLowered.includes('kit') && item.killstreak !== 0 && item.target === null;
 
-        const isMustUseNameForKillstreak =
-            item.killstreak !== 0
-                ? item.target !== null
-                    ? true
-                    : !isUnusualifier &&
-                      !isStrangifierChemistrySet &&
-                      !isCollectorsChemistrySet &&
-                      !isStrangifier &&
-                      !isFabricator &&
-                      !isGenericFabricator &&
-                      !isKillstreakKit &&
-                      !isGenericKillstreakKit
-                    ? true
-                    : false
-                : false;
+        // Begin formatting "item"
 
-        const isNotUsingDefindex =
-            isMustUseNameForKillstreak || item.festive || item.australium || item.paintkit || item.wear;
-
-        const formatted = {
-            item_name: isFabricator
-                ? item.killstreak === 2
-                    ? 'Specialized Killstreak Fabricator'
-                    : 'Professional Killstreak Fabricator'
-                : isKillstreakKit
-                ? item.killstreak === 1
-                    ? 'Killstreak Kit'
-                    : item.killstreak === 2
-                    ? 'Specialized Killstreak Kit'
-                    : 'Professional Killstreak Kit'
-                : isNotUsingDefindex
-                ? name
-                : item.defindex
+        const formatItem = {
+            defindex: item.defindex
         };
 
-        formatted.quality =
-            (item.quality2 !== null ? this.schema.getQualityById(item.quality2) + ' ' : '') +
-            this.schema.getQualityById(item.quality);
+        formatItem['quality'] = item.quality;
 
-        formatted.craftable = item.craftable ? 1 : 0;
-
-        formatted.priceindex =
-            item.effect !== null
-                ? item.effect
-                : item.crateseries !== null
-                ? item.crateseries
-                : isUnusualifier || isStrangifier
-                ? item.target
-                : isFabricator
-                ? `${item.output}-${item.outputQuality}-${item.target}`
-                : isKillstreakKit
-                ? `${item.killstreak}-${item.target}`
-                : isStrangifierChemistrySet
-                ? `${item.target}-${item.outputQuality}-${item.output}`
-                : isCollectorsChemistrySet
-                ? `${item.output}-${item.outputQuality}`
-                : isGenericFabricator
-                ? `${item.output}-${item.outputQuality}-0`
-                : undefined;
-
-        if (!formatted.priceindex) {
-            delete formatted.priceindex;
+        if (item.craftable) {
+            formatItem['flag_cannot_craft'] = true;
         }
 
-        return formatted;
+        if (typeof amount === 'number' && amount > 0) {
+            formatItem['quantity'] = amount;
+        }
+
+        formatItem['attributes'] = [];
+
+        if (item.killstreak !== 0) {
+            formatItem['attributes'].push({
+                defindex: 2025,
+                float_value: item.killstreak
+            });
+        }
+
+        if (item.australium) {
+            formatItem['attributes'].push({
+                defindex: 2027
+            });
+        }
+
+        if (item.festive) {
+            formatItem['attributes'].push({
+                defindex: 2053,
+                float_value: 1
+            });
+        }
+
+        if (item.effect) {
+            if (schemaItem['item_slot'] === 'taunt') {
+                formatItem['attributes'].push({
+                    defindex: 2041,
+                    float_value: item.effect
+                });
+            } else {
+                formatItem['attributes'].push({
+                    defindex: 134,
+                    float_value: item.effect
+                });
+            }
+        }
+
+        if (item.quality2) {
+            if (item.quality !== 11) {
+                formatItem['attributes'].push({
+                    defindex: 214
+                });
+            }
+        }
+
+        if (item.paintkit) {
+            formatItem['attributes'].push({
+                defindex: 834,
+                float_value: item.paintkit
+            });
+        }
+
+        if (item.wear) {
+            const wearValue = item.wear - 1;
+            formatItem['attributes'].push({
+                defindex: 749,
+                float_value: wearValue === 0 ? wearValue : wearValue / 5 // 0, 0.2, 0.4, 0.6, 0.8, 1
+            });
+        }
+
+        if (item.crateseries) {
+            formatItem['attributes'].push({
+                defindex: 187,
+                float_value: item.crateseries
+            });
+        } else if (item.craftnumber) {
+            formatItem['attributes'].push({
+                defindex: 229,
+                float_value: item.craftnumber
+            });
+        }
+
+        if (item.paint) {
+            formatItem['attributes'].push({
+                defindex: 142,
+                float_value: item.paint
+            });
+        }
+
+        if (isUnusualifier || isStrangifier || isKillstreakKit) {
+            formatItem['attributes'].push({
+                defindex: 2012,
+                float_value: item.target
+            });
+        }
+
+        // TODO: Chemistry Sets, Fabricators
+        // TODO: Validate, test
+        // TODO: Support for StrangeParts, Spells, Killstreak Sheen/Killstreaker
+
+        if (formatItem['attributes'].length === 0) {
+            delete formatItem['attributes'];
+        }
+
+        return formatItem;
     }
 
     /**
