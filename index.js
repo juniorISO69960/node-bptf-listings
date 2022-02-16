@@ -979,7 +979,7 @@ class ListingManager {
         if (schemaItem === null) {
             return null;
         }
-
+/*
         const name = this.schema.getName(
             {
                 defindex: item.defindex,
@@ -1024,16 +1024,15 @@ class ListingManager {
             item.outputQuality !== null;
 
         const isKillstreakKit = nameLowered.includes('kit') && item.killstreak !== 0 && item.target !== null;
-
+*/
         // Begin formatting "item"
 
         const formatItem = {
-            defindex: item.defindex
+            defindex: item.defindex,
+            quality: item.quality
         };
 
-        formatItem['quality'] = item.quality;
-
-        if (item.craftable) {
+        if (!item.craftable) {
             formatItem['flag_cannot_craft'] = true;
         }
 
@@ -1119,7 +1118,7 @@ class ListingManager {
             });
         }
 
-        if (isUnusualifier || isStrangifier || isKillstreakKit) {
+        if (typeof item.target === 'number') {
             formatItem['attributes'].push({
                 defindex: 2012,
                 float_value: item.target
