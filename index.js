@@ -859,10 +859,12 @@ class ListingManager {
 
     /**
      * Mass delete all listings
-     * @param {Number} intent - Optionally only delete buy (0) or sell (1) orders
+     * @param {Number} [intent] - Optionally only delete buy (0) or sell (1) orders
      * @param {Function} callback
      */
     deleteAllListings(intent, callback) {
+        if(typeof intent === 'function' && !callback) callback = intent;
+
         //TODO: ARCHIVED LISTINGS + ratelimit - 60 sec
         const options = {
             method: 'DELETE',

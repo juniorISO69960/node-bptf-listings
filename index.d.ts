@@ -70,6 +70,8 @@ declare class ListingManager extends EventEmitter {
 
     removeListings(listingIds: string[]): void;
 
+    deleteAllListings(callback: (err: any, body?: any) => any): void;
+
     deleteAllListings(intent: number, callback: (err: any, body?: any) => any): void;
 
     shutdown(): void;
