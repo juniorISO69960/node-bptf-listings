@@ -1133,14 +1133,6 @@ class ListingManager {
             });
         }
 
-        if (typeof item.target === 'number' && !item.output && !item.outputQuality) {
-            // Killstreak Kit, Strangifier, Unusualifier
-            formatItem['attributes'].push({
-                defindex: 2012,
-                float_value: item.target
-            });
-        }
-
         if (item.output) {
             // https://github.com/TF2Autobot/tf2autobot/issues/995#issuecomment-1043044308
 
@@ -1207,6 +1199,12 @@ class ListingManager {
             }
 
             formatItem['attributes'].push(recipe);
+        } else if (typeof item.target === 'number') {
+            // Killstreak Kit, Strangifier, Unusualifier
+            formatItem['attributes'].push({
+                defindex: 2012,
+                float_value: item.target
+            });
         }
 
         //Spells
