@@ -1141,32 +1141,72 @@ class ListingManager {
             });
         }
 
-        if (item.output) { // Killstreak fabs/chemistry sets
+        if (item.output) {
+            // https://github.com/TF2Autobot/tf2autobot/issues/995#issuecomment-1043044308
+
+            // Collector's Chemistry Set
+            // 20007;6;od-1085;oq-14
+            // itemdef: od (item.output)
+            // quality: oq (item.outputQuality)
+            // No attributes
+
+            // Strangifier Chemistry Set
+            // 20005;6;td-343;od-6522;oq-6
+            // itemdef: od (item.output)
+            // quality: oq (item.outputQuality)
+            // attributes[defindex=2012, float_value: td (item.target)]
+
+
+            // Fabricator Kit:
+            // Generic (Rare):
+            // 20002;6;kt-2;od-6523;oq-6
+            // itemdef: od (item.output)
+            // quality: oq (item.outputQuality)
+            // No attributes
+
+            // Non-Generic:
+            // 20003;6;kt-3;td-595;od-6526;oq-6
+            // itemdef: od (item.output)
+            // quality: oq (item.outputQuality)
+            // attributes[defindex=2012, float_value: td (item.target)]
+
             const recipe = {
-                "defindex": 2000, // recipe component defined item 1
+                "defindex": 2000, // Just use 2000...
                 "is_output": true,
-                "quantity": 1, //output quantity ?
-                "itemdef": item.output, //out KS kit id
-                "quality": item.outputQuality || 6, //out KS kit quality
-                "attributes": [ // this is just the same as in definition of killstreak kit
-                    {
-                        "defindex": 2012, // tool target item
-                        "float_value": item.target
-                    }
-                ]
+                "quantity": 1,
+                "itemdef": item.output,
+                "quality": item.outputQuality || 6
             };
-            if(item.sheen) {
-                recipe.attributes.push({
-                    "defindex": 2014, //killstreak sheen
-                    "float_value": item.sheen
-                });
+
+            if (![20006, 20007].includes(item.defindex)) {
+                // If not Collector's Chemistry Set
+
+                recipe['attributes'] = [];
+                if (item.target) {
+                    recipe.attributes.push({
+                        "defindex": 2012,
+                        "float_value": item.target
+                    });
+                }
+
+                if(item.sheen) {
+                    recipe.attributes.push({
+                        "defindex": 2014, //killstreak sheen
+                        "float_value": item.sheen
+                    });
+                }
+                if(item.killstreaker) {
+                    recipe.attributes.push({
+                        "defindex": 2013, //killstreak effect (for professional KS)
+                        "float_value": item.killstreaker
+                    });
+                }
+
+                if (recipe['attributes'].length === 0) {
+                    delete recipe['attributes'];
+                }
             }
-            if(item.killstreaker) {
-                recipe.attributes.push({
-                    "defindex": 2013, //killstreak effect (for professional KS)
-                    "float_value": item.killstreaker
-                });
-            }
+            
             formatItem['attributes'].push(recipe);
         }
 
