@@ -262,6 +262,7 @@ class Listing {
      * @param {Object} listing A backpack.tf listing object
      * @param {String} listing.id
      * @param {Number} listing.intent
+     * @param {Number} listing.amount
      * @param {Object} listing.item
      * @param {Number} listing.appid
      * @param {Object} listing.currencies
@@ -277,6 +278,7 @@ class Listing {
         this.id = listing.id;
         this.steamid = new SteamID(listing.steamid);
         this.intent = listing.intent;
+        this.amount = listing.amount;
         this.item = listing.item;
         this.appid = listing.appid;
         this.currencies = new Currencies(listing.currencies);
@@ -542,6 +544,7 @@ class Listing {
      * Changes specific properties and adds the job to the queue
      * @param {Object} properties
      * @param {Object} [properties.currencies] currencies
+     * @param {Number} [properties.amount]
      * @param {String} [properties.details]
      * @param {Number} [properties.quantity]
      */
