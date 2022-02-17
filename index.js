@@ -1169,33 +1169,29 @@ class ListingManager {
                 quality: item.outputQuality || 6
             };
 
-            if (![20006, 20007].includes(item.defindex)) {
-                // If not Collector's Chemistry Set
+            recipe['attributes'] = [];
+            if (item.target) {
+                recipe.attributes.push({
+                    defindex: 2012,
+                    float_value: item.target
+                });
+            }
 
-                recipe['attributes'] = [];
-                if (item.target) {
-                    recipe.attributes.push({
-                        defindex: 2012,
-                        float_value: item.target
-                    });
-                }
+            if (item.sheen) {
+                recipe.attributes.push({
+                    defindex: 2014, //killstreak sheen
+                    float_value: item.sheen
+                });
+            }
+            if (item.killstreaker) {
+                recipe.attributes.push({
+                    defindex: 2013, //killstreak effect (for professional KS)
+                    float_value: item.killstreaker
+                });
+            }
 
-                if (item.sheen) {
-                    recipe.attributes.push({
-                        defindex: 2014, //killstreak sheen
-                        float_value: item.sheen
-                    });
-                }
-                if (item.killstreaker) {
-                    recipe.attributes.push({
-                        defindex: 2013, //killstreak effect (for professional KS)
-                        float_value: item.killstreaker
-                    });
-                }
-
-                if (recipe['attributes'].length === 0) {
-                    delete recipe['attributes'];
-                }
+            if (recipe['attributes'].length === 0) {
+                delete recipe['attributes'];
             }
 
             formatItem['attributes'].push(recipe);
