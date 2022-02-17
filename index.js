@@ -1133,14 +1133,6 @@ class ListingManager {
             });
         }
 
-        if (typeof item.target === 'number' && !item.output && !item.outputQuality) {
-            // Killstreak Kit, Strangifier, Unusualifier
-            formatItem['attributes'].push({
-                defindex: 2012,
-                float_value: item.target
-            });
-        }
-
         if (item.output) { // Killstreak fabs/chemistry sets
             const recipe = {
                 "defindex": 2000, // recipe component defined item 1
@@ -1168,6 +1160,12 @@ class ListingManager {
                 });
             }
             formatItem['attributes'].push(recipe);
+        } else if (typeof item.target === 'number') {
+            // Killstreak Kit, Strangifier, Unusualifier
+            formatItem['attributes'].push({
+                defindex: 2012,
+                float_value: item.target
+            });
         }
 
         //Spells
