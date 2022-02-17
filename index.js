@@ -863,7 +863,7 @@ class ListingManager {
      * @param {Function} callback
      */
     deleteAllListings(intent, callback) {
-        if(typeof intent === 'function' && !callback) callback = intent;
+        if (typeof intent === 'function' && !callback) callback = intent;
 
         //TODO: ARCHIVED LISTINGS + ratelimit - 60 sec
         const options = {
@@ -982,7 +982,7 @@ class ListingManager {
         if (schemaItem === null) {
             return null;
         }
-/*
+        /*
         const name = this.schema.getName(
             {
                 defindex: item.defindex,
@@ -1156,7 +1156,6 @@ class ListingManager {
             // quality: oq (item.outputQuality)
             // attributes[defindex=2012, float_value: td (item.target)]
 
-
             // Fabricator Kit:
             // Generic (Rare):
             // 20002;6;kt-2;od-6523;oq-6
@@ -1171,11 +1170,11 @@ class ListingManager {
             // attributes[defindex=2012, float_value: td (item.target)]
 
             const recipe = {
-                "defindex": 2000, // Just use 2000...
-                "is_output": true,
-                "quantity": 1,
-                "itemdef": item.output,
-                "quality": item.outputQuality || 6
+                defindex: 2000, // Just use 2000...
+                is_output: true,
+                quantity: 1,
+                itemdef: item.output,
+                quality: item.outputQuality || 6
             };
 
             if (![20006, 20007].includes(item.defindex)) {
@@ -1184,21 +1183,21 @@ class ListingManager {
                 recipe['attributes'] = [];
                 if (item.target) {
                     recipe.attributes.push({
-                        "defindex": 2012,
-                        "float_value": item.target
+                        defindex: 2012,
+                        float_value: item.target
                     });
                 }
 
-                if(item.sheen) {
+                if (item.sheen) {
                     recipe.attributes.push({
-                        "defindex": 2014, //killstreak sheen
-                        "float_value": item.sheen
+                        defindex: 2014, //killstreak sheen
+                        float_value: item.sheen
                     });
                 }
-                if(item.killstreaker) {
+                if (item.killstreaker) {
                     recipe.attributes.push({
-                        "defindex": 2013, //killstreak effect (for professional KS)
-                        "float_value": item.killstreaker
+                        defindex: 2013, //killstreak effect (for professional KS)
+                        float_value: item.killstreaker
                     });
                 }
 
@@ -1206,61 +1205,61 @@ class ListingManager {
                     delete recipe['attributes'];
                 }
             }
-            
+
             formatItem['attributes'].push(recipe);
         }
 
         //Spells
-        if(typeof item.spell?.[1004] === 'number') {
+        if (typeof item.spell?.[1004] === 'number') {
             formatItem['attributes'].push({
                 defindex: 1004,
                 float_value: item.spell[1004]
             });
         }
-        if(typeof item.spell?.[1005] === 'number') {
+        if (typeof item.spell?.[1005] === 'number') {
             formatItem['attributes'].push({
                 defindex: 1005,
                 float_value: item.spell[1005]
             });
         }
-        if(item.spell?.[1006]) {
+        if (item.spell?.[1006]) {
             formatItem['attributes'].push({
                 defindex: 1006
             });
         }
-        if(item.spell?.[1007]) {
+        if (item.spell?.[1007]) {
             formatItem['attributes'].push({
                 defindex: 1007
             });
         }
-        if(item.spell?.[1008]) {
+        if (item.spell?.[1008]) {
             formatItem['attributes'].push({
                 defindex: 1008
             });
         }
-        if(item.spell?.[1009]) {
+        if (item.spell?.[1009]) {
             formatItem['attributes'].push({
                 defindex: 1009
             });
         }
 
         //Strange parts
-        if(item.parts?.[0]) {
+        if (item.parts?.[0]) {
             formatItem['attributes'].push({
-                "defindex": 380, //Strange PART 1
-                "float_value": item.parts?.[0]
+                defindex: 380, //Strange PART 1
+                float_value: item.parts?.[0]
             });
         }
-        if(item.parts?.[1]) {
+        if (item.parts?.[1]) {
             formatItem['attributes'].push({
-                "defindex": 382, //Strange PART 2
-                "float_value": item.parts?.[1]
+                defindex: 382, //Strange PART 2
+                float_value: item.parts?.[1]
             });
         }
-        if(item.parts?.[2]) {
+        if (item.parts?.[2]) {
             formatItem['attributes'].push({
-                "defindex": 384, //Strange PART 3
-                "float_value": item.parts?.[2]
+                defindex: 384, //Strange PART 3
+                float_value: item.parts?.[2]
             });
         }
 
