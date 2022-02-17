@@ -910,7 +910,7 @@ class ListingManager {
                 return null;
             }
 
-            const item = this._formatItem(listing.sku, listing.amount);
+            const item = this._formatItem(listing);
             if (item === null) {
                 return null;
             }
@@ -974,8 +974,8 @@ class ListingManager {
      * @param {String} sku
      * @return {Object} Returns the formatted item, null if the item does not exist
      */
-    _formatItem(sku, amount) {
-        const item = SKU.fromString(sku);
+    _formatItem(listing) {
+        const item = SKU.fromString(listing.sku);
 
         const schemaItem = this.schema.getItemByDefindex(item.defindex);
 
@@ -1039,8 +1039,9 @@ class ListingManager {
             formatItem['flag_cannot_craft'] = true;
         }
 
-        if (typeof amount === 'number' && amount > 0) {
-            formatItem['quantity'] = amount;
+        const quantity = listing.quantity;
+        if (typeof quantity === 'number' && quantity > 0) {
+            formatItem['quantity'] = quantity;
         }
 
         formatItem['attributes'] = [];

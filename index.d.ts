@@ -100,7 +100,7 @@ interface Create {
     id?: string; // only when intent 1 (sell)
     sku?: string; // only when intent 0 (buy)
     intent: 0 | 1;
-    amount?: number;
+    quantity?: number;
     promoted: 0 | 1;
     details: string;
     currencies: TF2Currencies;
@@ -136,7 +136,7 @@ declare namespace ListingManager {
         id?: string;
         sku?: string;
         intent: 0 | 1;
-        amount?: number;
+        quantity?: number;
         details?: string;
         promoted?: 0 | 1;
         currencies: TF2Currencies;
@@ -156,7 +156,7 @@ declare namespace ListingManager {
 
         appid: number;
 
-        amount: number;
+        quantity: number;
 
         currencies: TF2Currencies;
 
@@ -178,7 +178,6 @@ declare namespace ListingManager {
 
         update(properties: {
             currencies?: TF2Currencies;
-            amount?: number;
             details?: string;
             quantity?: number;
         }): void;
