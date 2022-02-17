@@ -282,8 +282,8 @@ class Listing {
         this.item = listing.item;
         this.appid = listing.appid;
         this.currencies = new Currencies(listing.currencies);
-        this.offers = listing.offers === 1;
-        this.buyout = listing.buyout === 1;
+        this.offers = listing.offers ?? 1;
+        this.buyout = listing.buyout ?? 1;
         this.promoted = listing.promoted;
         this.details = listing.details;
         this.created = listing.created;
