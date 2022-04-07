@@ -868,7 +868,7 @@ class ListingManager {
         //TODO: ARCHIVED LISTINGS + ratelimit - 60 sec
         const options = {
             method: 'DELETE',
-            url: `https://backpack.tf/api/classifieds/listings/`, //keep using old, as it is not so heavily rate limited
+            url: `https://backpack.tf/api/v2/classifieds/listings`, // 1 minute cooldown
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -1027,7 +1027,8 @@ class ListingManager {
             item.outputQuality !== null;
 
         const isKillstreakKit = nameLowered.includes('kit') && item.killstreak !== 0 && item.target !== null;
-*/
+        */
+
         // Begin formatting "item"
 
         const formatItem = {
