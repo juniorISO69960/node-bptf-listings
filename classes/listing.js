@@ -262,7 +262,6 @@ class Listing {
      * @param {Object} listing A backpack.tf listing object
      * @param {String} listing.id
      * @param {Number} listing.intent
-     * @param {Number} listing.quantity
      * @param {Object} listing.item
      * @param {Number} listing.appid
      * @param {Object} listing.currencies
@@ -278,7 +277,6 @@ class Listing {
         this.id = listing.id;
         this.steamid = new SteamID(listing.steamid);
         this.intent = listing.intent;
-        this.quantity = listing.quantity;
         this.item = listing.item;
         this.appid = listing.appid;
         this.currencies = new Currencies(listing.currencies);
