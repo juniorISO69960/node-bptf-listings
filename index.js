@@ -865,7 +865,8 @@ class ListingManager {
     deleteAllListings(intent, callback) {
         if (typeof intent === 'function' && !callback) callback = intent;
 
-        //TODO: ARCHIVED LISTINGS + ratelimit - 60 sec
+        //TODO: ratelimit - 60 sec
+
         const options = {
             method: 'DELETE',
             url: `https://backpack.tf/api/v2/classifieds/listings`, // 1 minute cooldown
@@ -882,15 +883,40 @@ class ListingManager {
             options.body['intent'] = intent;
         }
 
-        request(options, (err, response, body) => {
+        request(options, (err, response1, body1) => {
             if (err) {
                 this.emit('deleteListingsError', err);
                 return callback(err);
             }
 
-            this.emit('massDeleteListings', response);
+            this.emit('massDeleteListings', response1);
 
-            return callback(null, body);
+            const options2 = {
+                method: 'DELETE',
+                url: `https://backpack.tf/api/v2/classifieds/archive`, // 1 minute cooldown
+                headers: {
+                    'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                    Cookie: 'user-id=' + this.userID
+                },
+                qs: {
+                    token: this.token
+                }
+            };
+
+            if ([0, 1].includes(intent)) {
+                options2.body['intent'] = intent;
+            }
+
+            request(options2, (err, response2, body2) => {
+                if (err) {
+                    this.emit('deleteArchiveError', err);
+                    return callback(err);
+                }
+
+                this.emit('massDeleteArchive', response2);
+
+                return callback(null, { listings: body1, archive: body2 });
+            });
         });
     }
 
