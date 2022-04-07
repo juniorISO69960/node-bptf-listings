@@ -948,6 +948,14 @@ class ListingManager {
             // Keep sku for later
         }
 
+        if (listing.offers === undefined) {
+            listing.offers = 1;
+        }
+
+        if (listing.buyout === undefined) {
+            listing.buyout = 1;
+        }
+
         return listing;
     }
 
