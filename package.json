@@ -21,7 +21,7 @@
   "dependencies": {
     "@tf2autobot/tf2-currencies": "^2.0.1",
     "@tf2autobot/tf2-sku": "^2.0.3",
-    "async": "^3.2.1",
+    "async": "^3.2.3",
     "events": "^3.3.0",
     "request-retry-dayjs": "^1.1.2",
     "steamid": "^2.0.0",
