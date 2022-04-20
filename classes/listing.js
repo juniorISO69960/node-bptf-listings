@@ -543,8 +543,8 @@ class Listing {
      * @param {Object} properties
      * @param {Object} [properties.currencies] currencies
      * @param {String} [properties.details]
-     * @param {Number} [properties.quantity]
      */
+    // @param {Number} [properties.quantity]
     update(properties) {
         this._manager.updateListing(this.id, properties);
     }

@@ -179,7 +179,7 @@ declare namespace ListingManager {
         update(properties: {
             currencies?: TF2Currencies;
             details?: string;
-            quantity?: number;
+            // quantity?: number;
         }): void;
 
         remove(): void;

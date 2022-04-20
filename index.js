@@ -1074,10 +1074,11 @@ class ListingManager {
             formatItem['flag_cannot_craft'] = true;
         }
 
-        const quantity = listing.quantity;
-        if (typeof quantity === 'number' && quantity > 0) {
-            formatItem['quantity'] = quantity;
-        }
+        // Temporarily Disabled: https://github.com/TF2Autobot/tf2autobot/pull/1025#issuecomment-1100455637
+        // const quantity = listing.quantity;
+        // if (typeof quantity === 'number' && quantity > 0) {
+        //     formatItem['quantity'] = quantity;
+        // }
 
         formatItem['attributes'] = [];
 
