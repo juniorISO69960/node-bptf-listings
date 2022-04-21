@@ -42,6 +42,7 @@ class ListingManager {
         this.cap = null;
         this.promotes = null;
 
+        // TODO: Archived listings management
         this.listings = [];
 
         this.actions = {
@@ -235,6 +236,8 @@ class ListingManager {
         });
     }
 
+    // TODO: getArchiveListings
+
     /**
      * Gets the listings that you have on backpack.tf
      * @param {Function} callback
@@ -301,6 +304,8 @@ class ListingManager {
             return callback(null, body);
         });
     }
+
+    // TODO: Find archived listing(s)
 
     /**
      * Searches for one specific listing by sku or assetid
@@ -370,6 +375,8 @@ class ListingManager {
             this._action('create', formatted);
         }
     }
+
+    // TODO: Update archived listing(s)
 
     /**
      * Enqueues a list of listings to be made
