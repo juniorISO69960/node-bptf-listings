@@ -126,7 +126,7 @@ class ListingManager {
 
         const options = {
             method: 'POST',
-            url: 'https://backpack.tf/api/agent/pulse',
+            url: 'https://api.backpack.tf/api/agent/pulse',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -167,7 +167,7 @@ class ListingManager {
 
         const options = {
             method: 'POST',
-            url: 'https://backpack.tf/api/agent/stop',
+            url: 'https://api.backpack.tf/api/agent/stop',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -197,7 +197,7 @@ class ListingManager {
     _updateInventory(callback) {
         const options = {
             method: 'POST',
-            url: `https://backpack.tf/api/inventory/${this.steamid.getSteamID64()}/refresh`,
+            url: `https://api.backpack.tf/api/inventory/${this.steamid.getSteamID64()}/refresh`,
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -250,7 +250,7 @@ class ListingManager {
 
         const options = {
             method: 'GET',
-            url: 'https://backpack.tf/api/classifieds/listings/v1',
+            url: 'https://api.backpack.tf/api/classifieds/listings/v1',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -389,7 +389,7 @@ class ListingManager {
         }
         const options = {
             method: 'PATCH',
-            url: `https://backpack.tf/api/v2/classifieds/listings/${id}`,
+            url: `https://api.backpack.tf/api/v2/classifieds/listings/${id}`,
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -705,7 +705,7 @@ class ListingManager {
 
         const options = {
             method: 'POST',
-            url: 'https://backpack.tf/api/v2/classifieds/listings/batch',
+            url: 'https://api.backpack.tf/api/v2/classifieds/listings/batch',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -813,7 +813,7 @@ class ListingManager {
 
         const options = {
             method: 'DELETE',
-            url: 'https://backpack.tf/api/classifieds/delete/v1', //keep using old api, as it does not seem to have any item limit
+            url: 'https://api.backpack.tf/api/classifieds/delete/v1', //keep using old api, as it does not seem to have any item limit
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -876,7 +876,7 @@ class ListingManager {
 
         const options = {
             method: 'DELETE',
-            url: `https://backpack.tf/api/v2/classifieds/listings`, // 1 minute cooldown
+            url: `https://api.backpack.tf/api/v2/classifieds/listings`, // 1 minute cooldown
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
@@ -900,7 +900,7 @@ class ListingManager {
 
             const options2 = {
                 method: 'DELETE',
-                url: `https://backpack.tf/api/v2/classifieds/archive`, // 1 minute cooldown
+                url: `https://api.backpack.tf/api/v2/classifieds/archive`, // 1 minute cooldown
                 headers: {
                     'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                     Cookie: 'user-id=' + this.userID
