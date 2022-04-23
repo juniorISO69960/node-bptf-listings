@@ -494,12 +494,16 @@ class ListingManager {
         if (doneSomething) {
             this.emit('actions', this.actions);
 
-            if (this.actions.create.length >= this.batchSize) {
-                clearTimeout(this._timeout);
-                this._processActions();
-            } else {
-                this._startTimeout();
-            }
+            clearTimeout(this._timeout);
+            this._startTimeout();
+            this._processActions();
+
+            // if (this.actions.create.length >= this.batchSize) {
+            //     clearTimeout(this._timeout);
+            //     this._processActions();
+            // } else {
+            //     this._startTimeout();
+            // }
         }
     }
 
@@ -580,12 +584,13 @@ class ListingManager {
         });
     }
 
+
     /**
      * Starts timeout used to process actions
      */
     _startTimeout() {
         clearTimeout(this._timeout);
-        this._timeout = setTimeout(ListingManager.prototype._processActions.bind(this), this.waitTime);
+        this._timeout = setTimeout(() => {}, this.waitTime);
     }
 
     /**
