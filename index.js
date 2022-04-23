@@ -696,8 +696,6 @@ class ListingManager {
         }
 
         // TODO: Don't send sku and attempt time to backpack.tf
-        // TODO: Use the POST /classifieds/listings endpoint so that we can create specific buy orders (painted/spelled/parts etc)
-        // https://cdn.discordapp.com/attachments/666909760666468377/849319429271191652/Screenshot_137.png
 
         const batch = this.actions.create
             .filter(listing => listing.attempt !== this._lastInventoryUpdate)
@@ -1023,52 +1021,6 @@ class ListingManager {
         if (schemaItem === null) {
             return null;
         }
-        /*
-        const name = this.schema.getName(
-            {
-                defindex: item.defindex,
-                quality: 6,
-                festive: item.festive,
-                killstreak: item.killstreak,
-                australium: item.australium,
-                target: item.target,
-                paintkit: item.paintkit,
-                wear: item.wear
-            },
-            false
-        );
-
-        const nameLowered = name.toLowerCase();
-
-        const isUnusualifier = nameLowered.includes('unusualifier') && item.target !== null;
-
-        const isStrangifierChemistrySet =
-            nameLowered.includes('chemistry set') &&
-            item.target !== null &&
-            item.output !== null &&
-            item.outputQuality !== null;
-
-        const isCollectorsChemistrySet =
-            nameLowered.includes('chemistry set') &&
-            item.target === null &&
-            item.output !== null &&
-            item.outputQuality !== null;
-
-        const isStrangifier = nameLowered.includes('strangifier') && item.target !== null;
-
-        const isFabricator =
-            nameLowered.includes('fabricator') &&
-            item.target !== null &&
-            item.output !== null &&
-            item.outputQuality !== null;
-        const isGenericFabricator =
-            nameLowered.includes('fabricator') &&
-            item.target === null &&
-            item.output !== null &&
-            item.outputQuality !== null;
-
-        const isKillstreakKit = nameLowered.includes('kit') && item.killstreak !== 0 && item.target !== null;
-        */
 
         // Begin formatting "item"
 
