@@ -404,7 +404,7 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
-                this.emit('updateListingsError', `Error on updating a listing: ${JSON.stringify(response)}`);
+                this.emit('updateListingsError', err);
                 return;
             }
             this.emit('updateListingsSuccessful', response);
@@ -721,7 +721,7 @@ class ListingManager {
         request(options, (err, response, body) => {
             //TODO response
             if (err) {
-                this.emit('createListingsError', `Error on creating listings: ${JSON.stringify(response)}`);
+                this.emit('createListingsError', err);
                 return callback(err);
             }
 
@@ -846,7 +846,7 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
-                this.emit('deleteListingsError', `Error on deleting listings: ${JSON.stringify(response)}`);
+                this.emit('deleteListingsError', err);
                 return callback(err);
             }
 
@@ -890,10 +890,10 @@ class ListingManager {
             options.body['intent'] = intent;
         }
 
-        request(options, (err, response1, body1) => {
-            if (err) {
-                this.emit('deleteListingsError', `Error on deleting all listings: ${JSON.stringify(response1)}`);
-                return callback(err);
+        request(options, (err1, response1, body1) => {
+            if (err1) {
+                this.emit('deleteListingsError', err1);
+                return callback(err1);
             }
 
             this.emit('massDeleteListings', response1);
@@ -914,10 +914,10 @@ class ListingManager {
                 options2.body['intent'] = intent;
             }
 
-            request(options2, (err, response2, body2) => {
-                if (err) {
-                    this.emit('deleteArchiveError', `Error on deleting all archived listings: ${JSON.stringify(response2)}`);
-                    return callback(err);
+            request(options2, (err2, response2, body2) => {
+                if (err2) {
+                    this.emit('deleteArchiveError', err2);
+                    return callback(err2);
                 }
 
                 this.emit('massDeleteArchive', response2);
