@@ -151,7 +151,7 @@ class ListingManager {
             });
 
             return callback(null, body);
-        });
+        }).end();
     }
 
     /**
@@ -187,7 +187,7 @@ class ListingManager {
             this.emit('pulse', { status: body.status });
 
             return callback(null, body);
-        });
+        }).end();
     }
 
     /**
@@ -233,7 +233,7 @@ class ListingManager {
             }
 
             return callback(null);
-        });
+        }).end();
     }
 
     // TODO: getArchiveListings
@@ -302,7 +302,7 @@ class ListingManager {
             }
 
             return callback(null, body);
-        });
+        }).end();
     }
 
     // TODO: Find archived listing(s)
@@ -420,7 +420,7 @@ class ListingManager {
                     this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
                 ] = this.listings[index];
             }
-        });
+        }).end();
     }
 
     /**
@@ -795,7 +795,7 @@ class ListingManager {
             this.emit('actions', this.actions);
 
             callback(null, body);
-        });
+        }).end();
     }
 
     /**
@@ -861,7 +861,7 @@ class ListingManager {
             this.emit('actions', this.actions);
 
             return callback(null, body);
-        });
+        }).end();
     }
 
     /**
@@ -923,8 +923,8 @@ class ListingManager {
                 this.emit('massDeleteArchive', response2);
 
                 return callback(null, { listings: body1, archive: body2 });
-            });
-        });
+            }).end();
+        }).end();
     }
 
     /**
