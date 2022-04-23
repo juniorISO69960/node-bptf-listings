@@ -90,9 +90,21 @@ declare class ListingManager extends EventEmitter {
 
     on(event: 'createListingsError', handler: (err: Error) => void): this;
 
+    on(event: 'updateListingsError', handler: (err: Error) => void): this;
+
+    on(event: 'updateListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
+
     on(event: 'deleteListingsError', handler: (err: Error) => void): this;
 
-    on(event: 'deleteListingsSuccessful', handler: (err: Error) => void): this;
+    on(event: 'deleteListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
+
+    on(event: 'massDeleteListingsError', handler: (err: Error) => void): this;
+
+    on(event: 'massDeleteListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
+
+    on(event: 'massDeleteArchiveError', handler: (err: Error) => void): this;
+
+    on(event: 'massDeleteArchiveSuccessful', handler: (response: Record<string, unknown>) => void): this;
 }
 
 interface Create {

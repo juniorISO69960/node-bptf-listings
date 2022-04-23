@@ -895,11 +895,11 @@ class ListingManager {
 
         request(options, (err1, response1, body1) => {
             if (err1) {
-                this.emit('deleteListingsError', err1);
+                this.emit('massDeleteListingsError', err1);
                 return callback(err1);
             }
 
-            this.emit('massDeleteListings', response1);
+            this.emit('massDeleteListingsSuccessful', response1);
 
             const options2 = {
                 method: 'DELETE',
@@ -919,11 +919,11 @@ class ListingManager {
 
             request(options2, (err2, response2, body2) => {
                 if (err2) {
-                    this.emit('deleteArchiveError', err2);
+                    this.emit('massDeleteArchiveError', err2);
                     return callback(err2);
                 }
 
-                this.emit('massDeleteArchive', response2);
+                this.emit('massDeleteArchiveSuccessful', response2);
 
                 return callback(null, { listings: body1, archive: body2 });
             }).end();
