@@ -627,14 +627,14 @@ class ListingManager {
 
         async.series(
             {
+                update: callback => {
+                    this._update(callback);
+                },
                 delete: callback => {
                     this._delete(callback);
                 },
                 create: callback => {
                     this._create(callback);
-                },
-                update: callback => {
-                    this._update(callback);
                 }
             },
             (err, result) => {
