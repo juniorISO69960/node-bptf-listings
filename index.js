@@ -463,7 +463,7 @@ class ListingManager {
             }
         } else if (type === 'update') {
             // Might need to add something later
-            this.actions[type] = this.actions.type.concat(array);
+            this.actions[type] = this.actions[type].concat(array);
         }
 
         if (doneSomething) {
@@ -833,7 +833,6 @@ class ListingManager {
 
                 this.actions.update.shift();
             });
-
 
             this.emit('actions', this.actions);
 
