@@ -789,7 +789,10 @@ class ListingManager {
             return;
         }
 
-        const update = this.actions.update.slice(0, this.batchSize);
+        const update =
+            this.actions.update.length > this.batchSize
+                ? this.actions.update.slice(0, this.batchSize)
+                : this.actions.update;
 
         const options = {
             method: 'PATCH',
@@ -827,7 +830,10 @@ class ListingManager {
                         this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
                     ] = this.listings[index];
                 }
+
+                this.actions.update.shift();
             });
+
 
             this.emit('actions', this.actions);
 
