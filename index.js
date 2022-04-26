@@ -47,7 +47,8 @@ class ListingManager {
 
         this.actions = {
             create: [],
-            remove: []
+            remove: [],
+            update: []
         };
 
         this.schema = options.schema || null;
@@ -57,7 +58,8 @@ class ListingManager {
         this._listings = {};
         this._actions = {
             create: {},
-            remove: {}
+            remove: {},
+            update: {}
         };
     }
 
@@ -387,40 +389,10 @@ class ListingManager {
         if (!this.ready) {
             throw new Error('Module has not been successfully initialized');
         }
-        const options = {
-            method: 'PATCH',
-            url: `https://api.backpack.tf/api/v2/classifieds/listings/${id}`,
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: properties,
-            json: true,
-            gzip: true
-        };
 
-        request(options, (err, response, body) => {
-            if (err) {
-                this.emit('updateListingsError', err);
-                return;
-            }
-            this.emit('updateListingsSuccessful', response);
+        const formatted = { id, body: properties };
 
-            const index = this.listings.findIndex(listing => listing.id === id);
-            if (index >= 0) {
-                for (const key in properties) {
-                    if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
-                    if (!Object.prototype.hasOwnProperty.call(properties, key)) return;
-                    this.listings[index][key] = properties[key];
-                }
-                this._listings[
-                    this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
-                ] = this.listings[index];
-            }
-        }).end();
+        this._action('update', formatted);
     }
 
     /**
@@ -489,6 +461,9 @@ class ListingManager {
                 this.actions[type] = this.actions[type].concat(newest);
                 doneSomething = true;
             }
+        } else if (type === 'update') {
+            // Might need to add something later
+            this.actions[type] = this.actions.type.concat(array);
         }
 
         if (doneSomething) {
@@ -577,13 +552,12 @@ class ListingManager {
             this.listings = [];
             this.cap = null;
             this.promotes = null;
-            this.actions = { create: [], remove: [] };
-            this._actions = { create: {}, remove: {} };
+            this.actions = { create: [], remove: [], update: [] };
+            this._actions = { create: {}, remove: {}, update: {} };
             this._lastInventoryUpdate = null;
             this._createdListingsCount = 0;
         });
     }
-
 
     /**
      * Starts timeout used to process actions
@@ -636,6 +610,7 @@ class ListingManager {
             callback = noop;
         }
 
+        // Might need to do something here for update
         if (
             this._processingActions === true ||
             (this.actions.remove.length === 0 &&
@@ -657,6 +632,9 @@ class ListingManager {
                 },
                 create: callback => {
                     this._create(callback);
+                },
+                update: callback => {
+                    this._update(callback);
                 }
             },
             (err, result) => {
@@ -802,6 +780,62 @@ class ListingManager {
     }
 
     /**
+     * Update all listings in the update queue
+     * @param {Function} callback
+     */
+    _update(callback) {
+        if (this.actions.update.length === 0) {
+            callback(null, null);
+            return;
+        }
+
+        const update = this.actions.update.slice(0, this.batchSize);
+
+        const options = {
+            method: 'PATCH',
+            url: 'https://api.backpack.tf/api/v2/classifieds/listings/batch',
+            headers: {
+                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                Cookie: 'user-id=' + this.userID
+            },
+            qs: {
+                token: this.token
+            },
+            body: update,
+            json: true,
+            gzip: true
+        };
+
+        request(options, (err, response, body) => {
+            if (err) {
+                this.emit('updateListingsError', err);
+                // Might need to do something if failed, like if item id not found.
+                return callback(err);
+            }
+
+            this.emit('updateListingsSuccessful', response);
+
+            update.forEach(el => {
+                const index = this.listings.findIndex(listing => listing.id === el.id);
+                if (index >= 0) {
+                    for (const key in el.body) {
+                        if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
+                        if (!Object.prototype.hasOwnProperty.call(el.body, key)) return;
+                        this.listings[index][key] = el.body[key];
+                    }
+                    this._listings[
+                        this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
+                    ] = this.listings[index];
+                }
+            });
+
+            this.emit('actions', this.actions);
+
+            return callback(null, body);
+        }).end();
+    }
+
+    /**
      * Removes all listings in the remove queue
      * @param {Function} callback
      */
@@ -830,22 +864,6 @@ class ListingManager {
             json: true,
             gzip: true
         };
-
-        // if (batchSize === 1) {
-        //     options = {
-        //         method: 'DELETE',
-        //         url: `https://backpack.tf/api/classifieds/listings/${remove[0]}`,
-        //         headers: {
-        //             'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-        //             Cookie: 'user-id=' + this.userID
-        //         },
-        //         qs: {
-        //             token: this.token
-        //         }
-        //     };
-        // } else {
-
-        // }
 
         request(options, (err, response, body) => {
             if (err) {
