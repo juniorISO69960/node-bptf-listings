@@ -712,6 +712,7 @@ class ListingManager {
             if (Array.isArray(body)) {
                 body.forEach(element => {
                     if (element.result) {
+                        // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
                         this._createdListingsCount++;
                     }
 
