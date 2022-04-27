@@ -817,7 +817,7 @@ class ListingManager {
                 return callback(err);
             }
 
-            this.emit('updateListingsSuccessful', response);
+            this.emit('updateListingsSuccessful', body);
 
             update.forEach(el => {
                 const index = this.listings.findIndex(listing => listing.id === el.id);
@@ -877,7 +877,7 @@ class ListingManager {
                 return callback(err);
             }
 
-            this.emit('deleteListingsSuccessful', response);
+            this.emit('deleteListingsSuccessful', body);
 
             // Filter out listings that we just deleted
             this.actions.remove = this.actions.remove.filter(id => remove.indexOf(id) === -1);
@@ -923,7 +923,7 @@ class ListingManager {
                 return callback(err1);
             }
 
-            this.emit('massDeleteListingsSuccessful', response1);
+            this.emit('massDeleteListingsSuccessful', body1);
 
             const options2 = {
                 method: 'DELETE',
@@ -947,7 +947,7 @@ class ListingManager {
                     return callback(err2);
                 }
 
-                this.emit('massDeleteArchiveSuccessful', response2);
+                this.emit('massDeleteArchiveSuccessful', body2);
 
                 return callback(null, { listings: body1, archive: body2 });
             }).end();
