@@ -709,34 +709,22 @@ class ListingManager {
             const waitForInventory = [];
             const retryListings = [];
 
-            for (const identifier in body.listings) {
-                if (!body.listings.hasOwnProperty(identifier)) {
-                    continue;
-                }
-
-                const listing = body.listings[identifier];
-                if (listing.hasOwnProperty('error')) {
-                    if (listing.error === '' || listing.error == EFailiureReason.ItemNotInInventory) {
-                        waitForInventory.push(identifier);
-                    } else if (
-                        listing.error.indexOf('as it already exists') !== -1 ||
-                        listing.error == EFailiureReason.RelistTimeout
-                    ) {
-                        // This error should be extremely rare
-
-                        // Find listing matching the identifier in create queue
-                        const match = this.actions.create.find(formatted =>
-                            this._isSameByIdentifier(formatted, formatted.intent, identifier)
-                        );
-
-                        if (match !== undefined) {
-                            // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
-                            retryListings.push(match.intent == 0 ? identifier : match.id);
-                        }
+            if (Array.isArray(body)) {
+                body.forEach(element => {
+                    if (element.result) {
+                        // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
+                        this._createdListingsCount++;
                     }
-                } else {
-                    this._createdListingsCount++;
-                }
+
+                    // Else if error, it just like this:
+                    // element.error:
+                    // error: {
+                    //    message:
+                    //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
+                    // }
+
+                    // Hhmmm.. just ignore I guess...
+                });
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
@@ -816,7 +804,7 @@ class ListingManager {
                 return callback(err);
             }
 
-            this.emit('updateListingsSuccessful', response);
+            this.emit('updateListingsSuccessful', body);
 
             update.forEach(el => {
                 const index = this.listings.findIndex(listing => listing.id === el.id);
@@ -876,7 +864,7 @@ class ListingManager {
                 return callback(err);
             }
 
-            this.emit('deleteListingsSuccessful', response);
+            this.emit('deleteListingsSuccessful', body);
 
             // Filter out listings that we just deleted
             this.actions.remove = this.actions.remove.filter(id => remove.indexOf(id) === -1);
@@ -922,7 +910,7 @@ class ListingManager {
                 return callback(err1);
             }
 
-            this.emit('massDeleteListingsSuccessful', response1);
+            this.emit('massDeleteListingsSuccessful', body1);
 
             const options2 = {
                 method: 'DELETE',
@@ -946,7 +934,7 @@ class ListingManager {
                     return callback(err2);
                 }
 
-                this.emit('massDeleteArchiveSuccessful', response2);
+                this.emit('massDeleteArchiveSuccessful', body2);
 
                 return callback(null, { listings: body1, archive: body2 });
             }).end();
