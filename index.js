@@ -711,32 +711,18 @@ class ListingManager {
 
             if (Array.isArray(body)) {
                 body.forEach(element => {
-                    const listing = element.result;
-                    const intent = listing.intent === 'buy' ? 0 : 1;
-                    const identifier = intent === 0 ? listing.item.name : listing.id;
-
-                    if (listing.error !== undefined) {
-                        if (listing.error === '' || listing.error == EFailiureReason.ItemNotInInventory) {
-                            waitForInventory.push(identifier);
-                        } else if (
-                            listing.error.indexOf('as it already exists') !== -1 ||
-                            listing.error == EFailiureReason.RelistTimeout
-                        ) {
-                            // This error should be extremely rare
-
-                            // Find listing matching the identifier in create queue
-                            const match = this.actions.create.find(formatted =>
-                                this._isSameByIdentifier(formatted, formatted.intent, identifier)
-                            );
-
-                            if (match !== undefined) {
-                                // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
-                                retryListings.push(match.intent == 0 ? identifier : match.id);
-                            }
-                        }
-                    } else {
+                    if (element.result) {
                         this._createdListingsCount++;
                     }
+
+                    // Else if error, it just like this:
+                    // element.error:
+                    // error: {
+                    //    message:
+                    //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
+                    // }
+
+                    // Hhmmm.. just ignore I guess...
                 });
             }
 
