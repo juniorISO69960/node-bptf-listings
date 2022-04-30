@@ -469,16 +469,7 @@ class ListingManager {
         if (doneSomething) {
             this.emit('actions', this.actions);
 
-            clearTimeout(this._timeout);
             this._startTimeout();
-            this._processActions();
-
-            // if (this.actions.create.length >= this.batchSize) {
-            //     clearTimeout(this._timeout);
-            //     this._processActions();
-            // } else {
-            //     this._startTimeout();
-            // }
         }
     }
 
@@ -564,7 +555,7 @@ class ListingManager {
      */
     _startTimeout() {
         clearTimeout(this._timeout);
-        this._timeout = setTimeout(() => {}, this.waitTime);
+        this._timeout = setTimeout(ListingManager.prototype._processActions.bind(this), this.waitTime);
     }
 
     /**
@@ -641,18 +632,18 @@ class ListingManager {
                 // TODO: Only get listings if we created or deleted listings
 
                 if (
-                    this.actions.remove.length !== 0 ||
+                    this.actions.remove.length !== 0 ||  this.actions.update.length !== 0 ||
                     this._listingsWaitingForRetry() - this.actions.create.length !== 0
                 ) {
                     this._processingActions = false;
                     // There are still things to do
-                    this._processActions();
+                    this._startTimeout();
                     callback(null);
                 } else {
                     // Queues are empty, get listings
                     this.getListings(() => {
                         this._processingActions = false;
-                        this._processActions();
+                        this._startTimeout();
                         callback(null);
                     });
                 }
