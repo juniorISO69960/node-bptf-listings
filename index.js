@@ -726,7 +726,7 @@ class ListingManager {
                     // }
                 });
 
-                this.emit('createListingsSuccessful', { created: created.length, archived, errors });
+                this.emit('createListingsSuccessful', { created, archived, errors });
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
