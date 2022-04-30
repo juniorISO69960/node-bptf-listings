@@ -632,7 +632,8 @@ class ListingManager {
                 // TODO: Only get listings if we created or deleted listings
 
                 if (
-                    this.actions.remove.length !== 0 ||  this.actions.update.length !== 0 ||
+                    this.actions.remove.length !== 0 ||
+                    this.actions.update.length !== 0 ||
                     this._listingsWaitingForRetry() - this.actions.create.length !== 0
                 ) {
                     this._processingActions = false;
@@ -701,21 +702,31 @@ class ListingManager {
             const retryListings = [];
 
             if (Array.isArray(body)) {
+                let created = 0;
+                let archived = 0;
+                let errors = [];
+
                 body.forEach(element => {
                     if (element.result) {
                         // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
+                        created++;
                         this._createdListingsCount++;
+
+                        if (element.result.archived === true) {
+                            archived++;
+                        }
+                    } else if (element.error) {
+                        errors.push(element.error);
                     }
 
-                    // Else if error, it just like this:
                     // element.error:
                     // error: {
                     //    message:
                     //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
                     // }
-
-                    // Hhmmm.. just ignore I guess...
                 });
+
+                this.emit('createListingsSuccessful', { created: created.length, archived, errors });
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
@@ -795,7 +806,7 @@ class ListingManager {
                 return callback(err);
             }
 
-            this.emit('updateListingsSuccessful', body);
+            this.emit('updateListingsSuccessful', { updated: body.updated?.length, errors: body.errors });
 
             update.forEach(el => {
                 const index = this.listings.findIndex(listing => listing.id === el.id);

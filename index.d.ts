@@ -1,4 +1,3 @@
-
 import { EventEmitter } from 'events';
 import SchemaManager from '@tf2autobot/tf2-schema';
 import SteamID from 'steamid';
@@ -84,15 +83,23 @@ declare class ListingManager extends EventEmitter {
 
     on(event: 'actions', handler: (actions: { create: Record<string, unknown>[]; remove: string[] }) => void): this;
 
-    on(event: 'pulse', handler: (pulse: { status: string; current_time?: number; expire_at?: number; client?: string }) => void): this;
+    on(
+        event: 'pulse',
+        handler: (pulse: { status: string; current_time?: number; expire_at?: number; client?: string }) => void
+    ): this;
 
     on(event: 'inventory', handler: (lastUpdated: number) => void): this;
 
     on(event: 'createListingsError', handler: (err: Error) => void): this;
 
+    on(
+        event: 'createListingsSuccessful',
+        handler: (response: { created: number; archived: number; errors: { message: string }[] }) => void
+    ): this;
+
     on(event: 'updateListingsError', handler: (err: Error) => void): this;
 
-    on(event: 'updateListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
+    on(event: 'updateListingsSuccessful', handler: (response: { updated: number; errors: [] }) => void): this;
 
     on(event: 'deleteListingsError', handler: (err: Error) => void): this;
 
