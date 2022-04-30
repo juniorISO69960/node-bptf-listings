@@ -1118,7 +1118,7 @@ class ListingManager {
         if (typeof item.paintkit === 'number') {
             formatItem['attributes'].push({
                 defindex: 834,
-                float_value: item.paintkit
+                value: item.paintkit
             });
         }
 
