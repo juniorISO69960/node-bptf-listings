@@ -250,6 +250,8 @@ class ListingManager {
             return;
         }
 
+        // We will still use v1 for active listings
+
         const options = {
             method: 'GET',
             url: 'https://api.backpack.tf/api/classifieds/listings/v1',
@@ -1133,7 +1135,9 @@ class ListingManager {
                 defindex: 187,
                 float_value: item.crateseries
             });
-        } else if (item.craftnumber) {
+        }
+
+        if (item.craftnumber) {
             formatItem['attributes'].push({
                 defindex: 229,
                 float_value: item.craftnumber
