@@ -1139,7 +1139,7 @@ class ListingManager {
         if (item.craftnumber) {
             formatItem['attributes'].push({
                 defindex: 229,
-                float_value: item.craftnumber
+                value: item.craftnumber
             });
         }
 
