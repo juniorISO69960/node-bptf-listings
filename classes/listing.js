@@ -40,6 +40,7 @@ class Listing {
      * Creates a new instance of the listing class
      * @param {Object} listing A backpack.tf listing object
      * @param {String} listing.id
+     * @param {String} listing.sku
      * @param {Number} listing.intent
      * @param {Object} listing.item
      * @param {Number} listing.appid
@@ -56,21 +57,26 @@ class Listing {
      */
     constructor(listing, manager, v2) {
         this.id = listing.id;
-        this.steamid = new SteamID(listing.steamid);
-        this.intent = v2 ? (listing.intent === 'buy' ? 0 : 1) : listing.intent;
-        this.item = listing.item;
         this.appid = listing.appid;
+        this.steamid = new SteamID(listing.steamid);
+        this.item = listing.item;
+        this.sku = this.getSKU();
+
+        this.details = listing.details;
+        this.intent = v2 ? (listing.intent === 'buy' ? 0 : 1) : listing.intent;
         this.currencies = new Currencies(listing.currencies);
+
         this.offers = v2 ? (listing.tradeOffersPreferred ? 1 : 0) : listing.offers ?? 1;
         this.buyout = v2 ? (listing.buyoutOnly ? 1 : 0) : listing.buyout ?? 1;
         this.promoted = listing.promoted;
-        this.details = listing.details;
+
         this.created = v2 ? listing.listedAt : listing.created;
         this.bump = v2 ? listing.bumpedAt : listing.bump;
         this.archived = v2 ? listing.archived ?? false : false; // v1 never has this.
         this.status = listing.status ?? 'undefined';
 
         this.v2 = v2;
+        this.item = undefined; // Don't store this once we get the sku
 
         this._manager = manager;
     }
