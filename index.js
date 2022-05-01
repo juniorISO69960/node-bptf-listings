@@ -250,6 +250,8 @@ class ListingManager {
             return;
         }
 
+        // We will still use v1 for active listings
+
         const options = {
             method: 'GET',
             url: 'https://api.backpack.tf/api/classifieds/listings/v1',
@@ -274,12 +276,12 @@ class ListingManager {
 
             this.cap = body.cap;
             this.promotes = body.promotes_remaining;
-            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this));
+            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
             // Populate map
             this._listings = {};
             this.listings.forEach(listing => {
-                this._listings[listing.intent == 0 ? listing.getName() : listing.item.id] = listing;
+                this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
             });
 
             this._createdListingsCount = 0;
@@ -288,10 +290,7 @@ class ListingManager {
             this.actions.create.forEach(formatted => {
                 if (formatted.retry !== undefined) {
                     // Look for a listing that has a matching sku / id
-                    const match = this.findListing(
-                        formatted.intent == 0 ? formatted.sku : formatted.id,
-                        formatted.intent
-                    );
+                    const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
                     if (match !== null) {
                         // Found match, remove the listing and unset retry property
                         match.remove();
@@ -311,25 +310,21 @@ class ListingManager {
 
     /**
      * Searches for one specific listing by sku or assetid
-     * @param {String|Number} search sku or assetid
-     * @param {Number} intent 0 for buy, 1 for sell
+     * @param {String|Number} search
      * @return {Listing} Returns matching listing
      */
-    findListing(search, intent) {
-        const identifier = intent == 0 ? this.schema.getName(SKU.fromString(search)) : search;
-        return this._listings[identifier] === undefined ? null : this._listings[identifier];
+    findListing(search) {
+        return this._listings[search] === undefined ? null : this._listings[search];
     }
 
     /**
-     * Finds all listings that match the name of the item
+     * Finds all listings that match the sku of the item
      * @param {String} sku
      * @return {Array<Listing>} Returns matching listings
      */
     findListings(sku) {
-        const name = this.schema.getName(SKU.fromString(sku));
-
         return this.listings.filter(listing => {
-            return listing.getName() === name;
+            return listing.getSKU() === sku;
         });
     }
 
@@ -347,7 +342,7 @@ class ListingManager {
         const remove = [];
 
         formattedArr.forEach(formatted => {
-            const match = this.findListing(formatted.intent == 1 ? formatted.id : formatted.sku, formatted.intent);
+            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
             if (match !== null) {
                 remove.push(match.id);
             }
@@ -369,7 +364,7 @@ class ListingManager {
         const formatted = this._formatListing(listing);
 
         if (formatted !== null) {
-            const match = this.findListing(formatted.intent == 1 ? formatted.id : formatted.sku, formatted.intent);
+            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
             if (match !== null) {
                 match.remove();
             }
@@ -464,6 +459,7 @@ class ListingManager {
         } else if (type === 'update') {
             // Might need to add something later
             this.actions[type] = this.actions[type].concat(array);
+            doneSomething = true;
         }
 
         if (doneSomething) {
@@ -698,9 +694,6 @@ class ListingManager {
                 return callback(err);
             }
 
-            const waitForInventory = [];
-            const retryListings = [];
-
             if (Array.isArray(body)) {
                 let created = 0;
                 let archived = 0;
@@ -730,28 +723,6 @@ class ListingManager {
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
-                if (formatted.intent == 1 && waitForInventory.indexOf(formatted.id) !== -1) {
-                    if (formatted.attempt !== undefined) {
-                        // We have already tried to list before, remove it from the queue
-                        return false;
-                    }
-
-                    // We should wait for the inventory to update
-                    formatted.attempt = this._lastInventoryUpdate;
-                    return true;
-                }
-
-                const name = formatted.intent == 0 ? this.schema.getName(SKU.fromString(formatted.sku)) : null;
-
-                if (
-                    formatted.retry !== true &&
-                    retryListings.indexOf(formatted.intent == 0 ? name : formatted.id) !== -1
-                ) {
-                    // A similar listing was already made, we will need to remove the old listing and then try and add this one again
-                    formatted.retry = true;
-                    return true;
-                }
-
                 const index = batch.findIndex(v => this._isSame(formatted, v));
 
                 if (index !== -1) {
@@ -817,7 +788,7 @@ class ListingManager {
                         this.listings[index][key] = el.body[key];
                     }
                     this._listings[
-                        this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
+                        this.listings[index].intent === 0 ? this.listings[index].getSKU() : this.listings[index].item.id
                     ] = this.listings[index];
                 }
 
@@ -1016,11 +987,7 @@ class ListingManager {
     }
 
     _isSame(original, test) {
-        return this._isSameByIdentifier(
-            original,
-            test.intent,
-            test.intent == 0 ? this.schema.getName(SKU.fromString(test.sku)) : test.id
-        );
+        return this._isSameByIdentifier(original, test.intent, test.intent === 0 ? test.sku : test.id);
     }
 
     _isSameByIdentifier(original, testIntent, testIdentifier) {
@@ -1028,8 +995,7 @@ class ListingManager {
             return false;
         }
 
-        const originalIdentifier =
-            original.intent == 0 ? this.schema.getName(SKU.fromString(original.sku)) : original.id;
+        const originalIdentifier = original.intent === 0 ? original.sku : original.id;
 
         return originalIdentifier === testIdentifier;
     }
@@ -1140,7 +1106,9 @@ class ListingManager {
                 defindex: 187,
                 float_value: item.crateseries
             });
-        } else if (item.craftnumber) {
+        }
+
+        if (item.craftnumber) {
             formatItem['attributes'].push({
                 defindex: 229,
                 value: item.craftnumber

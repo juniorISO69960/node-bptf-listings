@@ -30,7 +30,7 @@ declare class ListingManager extends EventEmitter {
 
     listings: ListingManager.Listing[];
 
-    actions: { create: Create[]; remove: string[] };
+    actions: { create: ListingManager.CreateListing[]; remove: string[] };
 
     ready: boolean;
 
@@ -64,6 +64,8 @@ declare class ListingManager extends EventEmitter {
     createListing(listing: ListingManager.CreateListing): void;
 
     createListings(listings: ListingManager.CreateListing[]): void;
+
+    updateListing(listingId: string, properties: ListingManager.UpdateListing): void;
 
     removeListing(listingId: string): void;
 
@@ -114,24 +116,6 @@ declare class ListingManager extends EventEmitter {
     on(event: 'massDeleteArchiveSuccessful', handler: (response: Record<string, unknown>) => void): this;
 }
 
-interface Create {
-    time: number;
-    id?: string; // only when intent 1 (sell)
-    sku?: string; // only when intent 0 (buy)
-    intent: 0 | 1;
-    quantity?: number;
-    promoted: 0 | 1;
-    details: string;
-    currencies: TF2Currencies;
-    item?: Item; // only when intent 0 (buy)
-}
-
-interface Item {
-    item_name: string;
-    quality: string;
-    craftable: 0 | 1;
-}
-
 declare namespace ListingManager {
     interface Item {
         defindex: number;
@@ -162,20 +146,25 @@ declare namespace ListingManager {
         time: number;
     }
 
+    interface UpdateListing {
+        details: string;
+        currencies: TF2Currencies;
+    }
+
     export class Listing {
         id: string;
+
+        appid: number;
 
         steamid: SteamID;
 
         intent: 0 | 1;
 
-        promoted: 0 | 1;
-
         item: Record<string, unknown>;
 
-        appid: number;
+        sku: string;
 
-        quantity: number;
+        details: string;
 
         currencies: TF2Currencies;
 
@@ -183,17 +172,21 @@ declare namespace ListingManager {
 
         buyout: boolean;
 
-        details: string;
+        promoted: 0 | 1;
 
         created: number;
 
         bump: number;
 
+        archived: boolean;
+
+        status: string;
+
+        v2: boolean;
+
         getSKU(): string;
 
         getItem(): Item;
-
-        getName(): string;
 
         update(properties: {
             currencies?: TF2Currencies;
