@@ -123,13 +123,6 @@ interface Create {
     promoted: 0 | 1;
     details: string;
     currencies: TF2Currencies;
-    item?: Item; // only when intent 0 (buy)
-}
-
-interface Item {
-    item_name: string;
-    quality: string;
-    craftable: 0 | 1;
 }
 
 declare namespace ListingManager {
@@ -165,17 +158,17 @@ declare namespace ListingManager {
     export class Listing {
         id: string;
 
+        appid: number;
+
         steamid: SteamID;
 
         intent: 0 | 1;
 
-        promoted: 0 | 1;
+        itemId?: number | null; // intent === 0 will always null
 
-        item: Record<string, unknown>;
+        sku: string;
 
-        appid: number;
-
-        quantity: number;
+        details: string;
 
         currencies: TF2Currencies;
 
@@ -183,25 +176,19 @@ declare namespace ListingManager {
 
         buyout: boolean;
 
-        details: string;
+        promoted: 0 | 1;
 
         created: number;
 
         bump: number;
 
+        archived: boolean;
+
+        status: string;
+
+        v2: boolean;
+
         getSKU(): string;
-
-        getItem(): Item;
-
-        getName(): string;
-
-        update(properties: {
-            currencies?: TF2Currencies;
-            details?: string;
-            // quantity?: number;
-        }): void;
-
-        remove(): void;
     }
 }
 

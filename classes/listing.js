@@ -42,7 +42,6 @@ class Listing {
      * @param {String} listing.id
      * @param {String} listing.sku
      * @param {Number} listing.intent
-     * @param {Object} listing.item
      * @param {Number} listing.appid
      * @param {Object} listing.currencies
      * @param {Number} listing.offers
@@ -52,18 +51,19 @@ class Listing {
      * @param {Number} listing.created
      * @param {Number} listing.bump
      * @param {Boolean} listing.archived
-     * @param {Object} manager Instance of bptf-listings
      * @param {Boolean} v2
      */
-    constructor(listing, manager, v2) {
+    constructor(listing, v2) {
         this.id = listing.id;
         this.appid = listing.appid;
         this.steamid = new SteamID(listing.steamid);
-        this.item = listing.item;
+        this.intent = v2 ? (listing.intent === 'buy' ? 0 : 1) : listing.intent;
+
+        this.item = listing.item; // Temporary
+        this.itemId = this.intent === 0 ? null : this.item.id;
         this.sku = this.getSKU();
 
         this.details = listing.details;
-        this.intent = v2 ? (listing.intent === 'buy' ? 0 : 1) : listing.intent;
         this.currencies = new Currencies(listing.currencies);
 
         this.offers = v2 ? (listing.tradeOffersPreferred ? 1 : 0) : listing.offers ?? 1;
@@ -77,8 +77,6 @@ class Listing {
 
         this.v2 = v2;
         this.item = undefined; // Don't store this once we get the sku
-
-        this._manager = manager;
     }
 
     /**
@@ -88,6 +86,10 @@ class Listing {
     getSKU() {
         if (this.appid !== 440) {
             return null;
+        }
+
+        if (this.item === undefined) {
+            return this.sku;
         }
 
         return SKU.fromObject(this.getItem());
@@ -100,6 +102,10 @@ class Listing {
     getItem() {
         if (this.appid !== 440) {
             return this.item;
+        }
+
+        if (this.item === undefined) {
+            return this.sku;
         }
 
         const item = {
@@ -120,36 +126,6 @@ class Listing {
 
         // Adds default values
         return SKU.fromString(SKU.fromObject(item));
-    }
-
-    /**
-     * Returns the name of the item in the listing
-     * @return {String}
-     */
-    getName() {
-        if (this.appid !== 440) {
-            return null;
-        }
-
-        return this._manager.schema.getName(this.getItem());
-    }
-
-    /**
-     * Changes specific properties and adds the job to the queue
-     * @param {Object} properties
-     * @param {Object} [properties.currencies] currencies
-     * @param {String} [properties.details]
-     */
-    // @param {Number} [properties.quantity]
-    update(properties) {
-        this._manager.updateListing(this.id, properties);
-    }
-
-    /**
-     * Enqueues the listing to be removed
-     */
-    remove() {
-        this._manager.removeListing(this.id);
     }
 
     /**
