@@ -30,7 +30,7 @@ declare class ListingManager extends EventEmitter {
 
     listings: ListingManager.Listing[];
 
-    actions: { create: Create[]; remove: string[] };
+    actions: { create: ListingManager.CreateListing[]; remove: string[] };
 
     ready: boolean;
 
@@ -65,7 +65,7 @@ declare class ListingManager extends EventEmitter {
 
     createListings(listings: ListingManager.CreateListing[]): void;
 
-    updateListing(listingId: string, properties: UpdateListing): void;
+    updateListing(listingId: string, properties: ListingManager.UpdateListing): void;
 
     removeListing(listingId: string): void;
 
