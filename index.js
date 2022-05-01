@@ -47,7 +47,8 @@ class ListingManager {
 
         this.actions = {
             create: [],
-            remove: []
+            remove: [],
+            update: []
         };
 
         this.schema = options.schema || null;
@@ -57,7 +58,8 @@ class ListingManager {
         this._listings = {};
         this._actions = {
             create: {},
-            remove: {}
+            remove: {},
+            update: {}
         };
     }
 
@@ -248,6 +250,8 @@ class ListingManager {
             return;
         }
 
+        // We will still use v1 for active listings
+
         const options = {
             method: 'GET',
             url: 'https://api.backpack.tf/api/classifieds/listings/v1',
@@ -272,12 +276,12 @@ class ListingManager {
 
             this.cap = body.cap;
             this.promotes = body.promotes_remaining;
-            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this));
+            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
             // Populate map
             this._listings = {};
             this.listings.forEach(listing => {
-                this._listings[listing.intent == 0 ? listing.getName() : listing.item.id] = listing;
+                this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
             });
 
             this._createdListingsCount = 0;
@@ -286,10 +290,7 @@ class ListingManager {
             this.actions.create.forEach(formatted => {
                 if (formatted.retry !== undefined) {
                     // Look for a listing that has a matching sku / id
-                    const match = this.findListing(
-                        formatted.intent == 0 ? formatted.sku : formatted.id,
-                        formatted.intent
-                    );
+                    const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
                     if (match !== null) {
                         // Found match, remove the listing and unset retry property
                         match.remove();
@@ -309,25 +310,21 @@ class ListingManager {
 
     /**
      * Searches for one specific listing by sku or assetid
-     * @param {String|Number} search sku or assetid
-     * @param {Number} intent 0 for buy, 1 for sell
+     * @param {String|Number} search
      * @return {Listing} Returns matching listing
      */
-    findListing(search, intent) {
-        const identifier = intent == 0 ? this.schema.getName(SKU.fromString(search)) : search;
-        return this._listings[identifier] === undefined ? null : this._listings[identifier];
+    findListing(search) {
+        return this._listings[search] === undefined ? null : this._listings[search];
     }
 
     /**
-     * Finds all listings that match the name of the item
+     * Finds all listings that match the sku of the item
      * @param {String} sku
      * @return {Array<Listing>} Returns matching listings
      */
     findListings(sku) {
-        const name = this.schema.getName(SKU.fromString(sku));
-
         return this.listings.filter(listing => {
-            return listing.getName() === name;
+            return listing.getSKU() === sku;
         });
     }
 
@@ -345,7 +342,7 @@ class ListingManager {
         const remove = [];
 
         formattedArr.forEach(formatted => {
-            const match = this.findListing(formatted.intent == 1 ? formatted.id : formatted.sku, formatted.intent);
+            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
             if (match !== null) {
                 remove.push(match.id);
             }
@@ -367,7 +364,7 @@ class ListingManager {
         const formatted = this._formatListing(listing);
 
         if (formatted !== null) {
-            const match = this.findListing(formatted.intent == 1 ? formatted.id : formatted.sku, formatted.intent);
+            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
             if (match !== null) {
                 match.remove();
             }
@@ -387,40 +384,10 @@ class ListingManager {
         if (!this.ready) {
             throw new Error('Module has not been successfully initialized');
         }
-        const options = {
-            method: 'PATCH',
-            url: `https://api.backpack.tf/api/v2/classifieds/listings/${id}`,
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: properties,
-            json: true,
-            gzip: true
-        };
 
-        request(options, (err, response, body) => {
-            if (err) {
-                this.emit('updateListingsError', err);
-                return;
-            }
-            this.emit('updateListingsSuccessful', response);
+        const formatted = { id, body: properties };
 
-            const index = this.listings.findIndex(listing => listing.id === id);
-            if (index >= 0) {
-                for (const key in properties) {
-                    if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
-                    if (!Object.prototype.hasOwnProperty.call(properties, key)) return;
-                    this.listings[index][key] = properties[key];
-                }
-                this._listings[
-                    this.listings[index].intent == 0 ? this.listings[index].getName() : this.listings[index].item.id
-                ] = this.listings[index];
-            }
-        }).end();
+        this._action('update', formatted);
     }
 
     /**
@@ -489,21 +456,16 @@ class ListingManager {
                 this.actions[type] = this.actions[type].concat(newest);
                 doneSomething = true;
             }
+        } else if (type === 'update') {
+            // Might need to add something later
+            this.actions[type] = this.actions[type].concat(array);
+            doneSomething = true;
         }
 
         if (doneSomething) {
             this.emit('actions', this.actions);
 
-            clearTimeout(this._timeout);
             this._startTimeout();
-            this._processActions();
-
-            // if (this.actions.create.length >= this.batchSize) {
-            //     clearTimeout(this._timeout);
-            //     this._processActions();
-            // } else {
-            //     this._startTimeout();
-            // }
         }
     }
 
@@ -577,20 +539,19 @@ class ListingManager {
             this.listings = [];
             this.cap = null;
             this.promotes = null;
-            this.actions = { create: [], remove: [] };
-            this._actions = { create: {}, remove: {} };
+            this.actions = { create: [], remove: [], update: [] };
+            this._actions = { create: {}, remove: {}, update: {} };
             this._lastInventoryUpdate = null;
             this._createdListingsCount = 0;
         });
     }
-
 
     /**
      * Starts timeout used to process actions
      */
     _startTimeout() {
         clearTimeout(this._timeout);
-        this._timeout = setTimeout(() => {}, this.waitTime);
+        this._timeout = setTimeout(ListingManager.prototype._processActions.bind(this), this.waitTime);
     }
 
     /**
@@ -636,6 +597,7 @@ class ListingManager {
             callback = noop;
         }
 
+        // Might need to do something here for update
         if (
             this._processingActions === true ||
             (this.actions.remove.length === 0 &&
@@ -652,6 +614,9 @@ class ListingManager {
 
         async.series(
             {
+                update: callback => {
+                    this._update(callback);
+                },
                 delete: callback => {
                     this._delete(callback);
                 },
@@ -664,17 +629,18 @@ class ListingManager {
 
                 if (
                     this.actions.remove.length !== 0 ||
+                    this.actions.update.length !== 0 ||
                     this._listingsWaitingForRetry() - this.actions.create.length !== 0
                 ) {
                     this._processingActions = false;
                     // There are still things to do
-                    this._processActions();
+                    this._startTimeout();
                     callback(null);
                 } else {
                     // Queues are empty, get listings
                     this.getListings(() => {
                         this._processingActions = false;
-                        this._processActions();
+                        this._startTimeout();
                         callback(null);
                     });
                 }
@@ -728,62 +694,35 @@ class ListingManager {
                 return callback(err);
             }
 
-            const waitForInventory = [];
-            const retryListings = [];
+            if (Array.isArray(body)) {
+                let created = 0;
+                let archived = 0;
+                let errors = [];
 
-            for (const identifier in body.listings) {
-                if (!body.listings.hasOwnProperty(identifier)) {
-                    continue;
-                }
+                body.forEach(element => {
+                    if (element.result) {
+                        // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
+                        created++;
+                        this._createdListingsCount++;
 
-                const listing = body.listings[identifier];
-                if (listing.hasOwnProperty('error')) {
-                    if (listing.error === '' || listing.error == EFailiureReason.ItemNotInInventory) {
-                        waitForInventory.push(identifier);
-                    } else if (
-                        listing.error.indexOf('as it already exists') !== -1 ||
-                        listing.error == EFailiureReason.RelistTimeout
-                    ) {
-                        // This error should be extremely rare
-
-                        // Find listing matching the identifier in create queue
-                        const match = this.actions.create.find(formatted =>
-                            this._isSameByIdentifier(formatted, formatted.intent, identifier)
-                        );
-
-                        if (match !== undefined) {
-                            // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
-                            retryListings.push(match.intent == 0 ? identifier : match.id);
+                        if (element.result.archived === true) {
+                            archived++;
                         }
+                    } else if (element.error) {
+                        errors.push(element.error);
                     }
-                } else {
-                    this._createdListingsCount++;
-                }
+
+                    // element.error:
+                    // error: {
+                    //    message:
+                    //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
+                    // }
+                });
+
+                this.emit('createListingsSuccessful', { created, archived, errors });
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
-                if (formatted.intent == 1 && waitForInventory.indexOf(formatted.id) !== -1) {
-                    if (formatted.attempt !== undefined) {
-                        // We have already tried to list before, remove it from the queue
-                        return false;
-                    }
-
-                    // We should wait for the inventory to update
-                    formatted.attempt = this._lastInventoryUpdate;
-                    return true;
-                }
-
-                const name = formatted.intent == 0 ? this.schema.getName(SKU.fromString(formatted.sku)) : null;
-
-                if (
-                    formatted.retry !== true &&
-                    retryListings.indexOf(formatted.intent == 0 ? name : formatted.id) !== -1
-                ) {
-                    // A similar listing was already made, we will need to remove the old listing and then try and add this one again
-                    formatted.retry = true;
-                    return true;
-                }
-
                 const index = batch.findIndex(v => this._isSame(formatted, v));
 
                 if (index !== -1) {
@@ -798,6 +737,67 @@ class ListingManager {
             this.emit('actions', this.actions);
 
             callback(null, body);
+        }).end();
+    }
+
+    /**
+     * Update all listings in the update queue
+     * @param {Function} callback
+     */
+    _update(callback) {
+        if (this.actions.update.length === 0) {
+            callback(null, null);
+            return;
+        }
+
+        const update =
+            this.actions.update.length > this.batchSize
+                ? this.actions.update.slice(0, this.batchSize)
+                : this.actions.update;
+
+        const options = {
+            method: 'PATCH',
+            url: 'https://api.backpack.tf/api/v2/classifieds/listings/batch',
+            headers: {
+                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                Cookie: 'user-id=' + this.userID
+            },
+            qs: {
+                token: this.token
+            },
+            body: update,
+            json: true,
+            gzip: true
+        };
+
+        request(options, (err, response, body) => {
+            if (err) {
+                this.emit('updateListingsError', err);
+                // Might need to do something if failed, like if item id not found.
+                return callback(err);
+            }
+
+            this.emit('updateListingsSuccessful', { updated: body.updated?.length, errors: body.errors });
+
+            update.forEach(el => {
+                const index = this.listings.findIndex(listing => listing.id === el.id);
+                if (index >= 0) {
+                    for (const key in el.body) {
+                        if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
+                        if (!Object.prototype.hasOwnProperty.call(el.body, key)) return;
+                        this.listings[index][key] = el.body[key];
+                    }
+                    this._listings[
+                        this.listings[index].intent === 0 ? this.listings[index].getSKU() : this.listings[index].item.id
+                    ] = this.listings[index];
+                }
+
+                this.actions.update.shift();
+            });
+
+            this.emit('actions', this.actions);
+
+            return callback(null, body);
         }).end();
     }
 
@@ -831,29 +831,13 @@ class ListingManager {
             gzip: true
         };
 
-        // if (batchSize === 1) {
-        //     options = {
-        //         method: 'DELETE',
-        //         url: `https://backpack.tf/api/classifieds/listings/${remove[0]}`,
-        //         headers: {
-        //             'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-        //             Cookie: 'user-id=' + this.userID
-        //         },
-        //         qs: {
-        //             token: this.token
-        //         }
-        //     };
-        // } else {
-
-        // }
-
         request(options, (err, response, body) => {
             if (err) {
                 this.emit('deleteListingsError', err);
                 return callback(err);
             }
 
-            this.emit('deleteListingsSuccessful', response);
+            this.emit('deleteListingsSuccessful', body);
 
             // Filter out listings that we just deleted
             this.actions.remove = this.actions.remove.filter(id => remove.indexOf(id) === -1);
@@ -899,7 +883,7 @@ class ListingManager {
                 return callback(err1);
             }
 
-            this.emit('massDeleteListingsSuccessful', response1);
+            this.emit('massDeleteListingsSuccessful', body1);
 
             const options2 = {
                 method: 'DELETE',
@@ -923,7 +907,7 @@ class ListingManager {
                     return callback(err2);
                 }
 
-                this.emit('massDeleteArchiveSuccessful', response2);
+                this.emit('massDeleteArchiveSuccessful', body2);
 
                 return callback(null, { listings: body1, archive: body2 });
             }).end();
@@ -966,6 +950,14 @@ class ListingManager {
             listing.buyout = 1;
         }
 
+        if (listing.timestamp !== undefined) {
+            delete listing.timestamp;
+        }
+
+        if (listing.value !== undefined) {
+            delete listing.value;
+        }
+
         return listing;
     }
 
@@ -995,11 +987,7 @@ class ListingManager {
     }
 
     _isSame(original, test) {
-        return this._isSameByIdentifier(
-            original,
-            test.intent,
-            test.intent == 0 ? this.schema.getName(SKU.fromString(test.sku)) : test.id
-        );
+        return this._isSameByIdentifier(original, test.intent, test.intent === 0 ? test.sku : test.id);
     }
 
     _isSameByIdentifier(original, testIntent, testIdentifier) {
@@ -1007,8 +995,7 @@ class ListingManager {
             return false;
         }
 
-        const originalIdentifier =
-            original.intent == 0 ? this.schema.getName(SKU.fromString(original.sku)) : original.id;
+        const originalIdentifier = original.intent === 0 ? original.sku : original.id;
 
         return originalIdentifier === testIdentifier;
     }
@@ -1103,15 +1090,14 @@ class ListingManager {
         if (typeof item.paintkit === 'number') {
             formatItem['attributes'].push({
                 defindex: 834,
-                float_value: item.paintkit
+                value: item.paintkit
             });
         }
 
         if (item.wear) {
-            const wearValue = item.wear - 1;
             formatItem['attributes'].push({
-                defindex: 749,
-                float_value: wearValue === 0 ? wearValue : wearValue / 5 // 0, 0.2, 0.4, 0.6, 0.8, 1
+                defindex: 725,
+                float_value: item.wear / 5 // 0.2, 0.4, 0.6, 0.8, 1
             });
         }
 
@@ -1120,10 +1106,12 @@ class ListingManager {
                 defindex: 187,
                 float_value: item.crateseries
             });
-        } else if (item.craftnumber) {
+        }
+
+        if (item.craftnumber) {
             formatItem['attributes'].push({
                 defindex: 229,
-                float_value: item.craftnumber
+                value: item.craftnumber
             });
         }
 

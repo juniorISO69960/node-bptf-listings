@@ -1,4 +1,3 @@
-
 import { EventEmitter } from 'events';
 import SchemaManager from '@tf2autobot/tf2-schema';
 import SteamID from 'steamid';
@@ -31,7 +30,7 @@ declare class ListingManager extends EventEmitter {
 
     listings: ListingManager.Listing[];
 
-    actions: { create: Create[]; remove: string[] };
+    actions: { create: ListingManager.CreateListing[]; remove: string[] };
 
     ready: boolean;
 
@@ -66,6 +65,8 @@ declare class ListingManager extends EventEmitter {
 
     createListings(listings: ListingManager.CreateListing[]): void;
 
+    updateListing(listingId: string, properties: ListingManager.UpdateListing): void;
+
     removeListing(listingId: string): void;
 
     removeListings(listingIds: string[]): void;
@@ -84,15 +85,23 @@ declare class ListingManager extends EventEmitter {
 
     on(event: 'actions', handler: (actions: { create: Record<string, unknown>[]; remove: string[] }) => void): this;
 
-    on(event: 'pulse', handler: (pulse: { status: string; current_time?: number; expire_at?: number; client?: string }) => void): this;
+    on(
+        event: 'pulse',
+        handler: (pulse: { status: string; current_time?: number; expire_at?: number; client?: string }) => void
+    ): this;
 
     on(event: 'inventory', handler: (lastUpdated: number) => void): this;
 
     on(event: 'createListingsError', handler: (err: Error) => void): this;
 
+    on(
+        event: 'createListingsSuccessful',
+        handler: (response: { created: number; archived: number; errors: { message: string }[] }) => void
+    ): this;
+
     on(event: 'updateListingsError', handler: (err: Error) => void): this;
 
-    on(event: 'updateListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
+    on(event: 'updateListingsSuccessful', handler: (response: { updated: number; errors: [] }) => void): this;
 
     on(event: 'deleteListingsError', handler: (err: Error) => void): this;
 
@@ -105,24 +114,6 @@ declare class ListingManager extends EventEmitter {
     on(event: 'massDeleteArchiveError', handler: (err: Error) => void): this;
 
     on(event: 'massDeleteArchiveSuccessful', handler: (response: Record<string, unknown>) => void): this;
-}
-
-interface Create {
-    time: number;
-    id?: string; // only when intent 1 (sell)
-    sku?: string; // only when intent 0 (buy)
-    intent: 0 | 1;
-    quantity?: number;
-    promoted: 0 | 1;
-    details: string;
-    currencies: TF2Currencies;
-    item?: Item; // only when intent 0 (buy)
-}
-
-interface Item {
-    item_name: string;
-    quality: string;
-    craftable: 0 | 1;
 }
 
 declare namespace ListingManager {
@@ -155,20 +146,25 @@ declare namespace ListingManager {
         time: number;
     }
 
+    interface UpdateListing {
+        details: string;
+        currencies: TF2Currencies;
+    }
+
     export class Listing {
         id: string;
+
+        appid: number;
 
         steamid: SteamID;
 
         intent: 0 | 1;
 
-        promoted: 0 | 1;
-
         item: Record<string, unknown>;
 
-        appid: number;
+        sku: string;
 
-        quantity: number;
+        details: string;
 
         currencies: TF2Currencies;
 
@@ -176,17 +172,21 @@ declare namespace ListingManager {
 
         buyout: boolean;
 
-        details: string;
+        promoted: 0 | 1;
 
         created: number;
 
         bump: number;
 
+        archived: boolean;
+
+        status: string;
+
+        v2: boolean;
+
         getSKU(): string;
 
         getItem(): Item;
-
-        getName(): string;
 
         update(properties: {
             currencies?: TF2Currencies;
