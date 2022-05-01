@@ -160,7 +160,7 @@ declare namespace ListingManager {
 
         intent: 0 | 1;
 
-        itemId?: number | null; // intent === 0 will always null
+        item: Record<string, unknown>;
 
         sku: string;
 
@@ -185,6 +185,16 @@ declare namespace ListingManager {
         v2: boolean;
 
         getSKU(): string;
+
+        getItem(): Item;
+
+        update(properties: {
+            currencies?: TF2Currencies;
+            details?: string;
+            // quantity?: number;
+        }): void;
+
+        remove(): void;
     }
 }
 

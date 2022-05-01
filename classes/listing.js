@@ -50,18 +50,16 @@ class Listing {
      * @param {Number} listing.promoted
      * @param {Number} listing.created
      * @param {Number} listing.bump
+     * @param {Object} manager Instance of bptf-listings
      * @param {Boolean} listing.archived
      * @param {Boolean} v2
      */
-    constructor(listing, v2) {
+    constructor(listing, manager, v2) {
         this.id = listing.id;
         this.appid = listing.appid;
         this.steamid = new SteamID(listing.steamid);
         this.intent = v2 ? (listing.intent === 'buy' ? 0 : 1) : listing.intent;
-
-        this.item = listing.item; // Temporary
-        this.itemId = this.intent === 0 ? null : this.item.id;
-        this.sku = this.getSKU();
+        this.item = listing.item;
 
         this.details = listing.details;
         this.currencies = new Currencies(listing.currencies);
@@ -76,7 +74,7 @@ class Listing {
         this.status = listing.status ?? 'undefined';
 
         this.v2 = v2;
-        this.item = undefined; // Don't store this once we get the sku
+        this._manager = manager;
     }
 
     /**
@@ -88,11 +86,13 @@ class Listing {
             return null;
         }
 
-        if (this.item === undefined) {
+        if (this.sku !== undefined) {
             return this.sku;
         }
 
-        return SKU.fromObject(this.getItem());
+        this.sku = SKU.fromObject(this.getItem());
+
+        return this.sku;
     }
 
     /**
@@ -104,8 +104,8 @@ class Listing {
             return this.item;
         }
 
-        if (this.item === undefined) {
-            return this.sku;
+        if (this.sku !== undefined) {
+            return SKU.fromString(this.sku);
         }
 
         const item = {
@@ -126,6 +126,24 @@ class Listing {
 
         // Adds default values
         return SKU.fromString(SKU.fromObject(item));
+    }
+
+    /**
+     * Changes specific properties and adds the job to the queue
+     * @param {Object} properties
+     * @param {Object} [properties.currencies] currencies
+     * @param {String} [properties.details]
+     */
+    // @param {Number} [properties.quantity]
+    update(properties) {
+        this._manager.updateListing(this.id, properties);
+    }
+
+    /**
+     * Enqueues the listing to be removed
+     */
+    remove() {
+        this._manager.removeListing(this.id);
     }
 
     /**

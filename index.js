@@ -276,12 +276,12 @@ class ListingManager {
 
             this.cap = body.cap;
             this.promotes = body.promotes_remaining;
-            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, false));
+            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
             // Populate map
             this._listings = {};
             this.listings.forEach(listing => {
-                this._listings[listing.intent == 0 ? listing.sku : listing.itemId] = listing;
+                this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
             });
 
             this._createdListingsCount = 0;
@@ -293,7 +293,7 @@ class ListingManager {
                     const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
                     if (match !== null) {
                         // Found match, remove the listing and unset retry property
-                        this.removeListing(match);
+                        match.remove();
                     }
                 }
             });
@@ -324,7 +324,7 @@ class ListingManager {
      */
     findListings(sku) {
         return this.listings.filter(listing => {
-            return listing.sku === sku;
+            return listing.getSKU() === sku;
         });
     }
 
@@ -366,7 +366,7 @@ class ListingManager {
         if (formatted !== null) {
             const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
             if (match !== null) {
-                this.removeListing(match);
+                match.remove();
             }
 
             this._action('create', formatted);
@@ -788,7 +788,7 @@ class ListingManager {
                         this.listings[index][key] = el.body[key];
                     }
                     this._listings[
-                        this.listings[index].intent === 0 ? this.listings[index].sku : this.listings[index].itemId
+                        this.listings[index].intent === 0 ? this.listings[index].getSKU() : this.listings[index].item.id
                     ] = this.listings[index];
                 }
 
