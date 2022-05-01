@@ -1116,15 +1116,14 @@ class ListingManager {
         if (typeof item.paintkit === 'number') {
             formatItem['attributes'].push({
                 defindex: 834,
-                float_value: item.paintkit
+                value: item.paintkit
             });
         }
 
         if (item.wear) {
-            const wearValue = item.wear - 1;
             formatItem['attributes'].push({
-                defindex: 749,
-                float_value: wearValue === 0 ? wearValue : wearValue / 5 // 0, 0.2, 0.4, 0.6, 0.8, 1
+                defindex: 725,
+                float_value: item.wear / 5 // 0.2, 0.4, 0.6, 0.8, 1
             });
         }
 
