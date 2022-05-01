@@ -979,6 +979,14 @@ class ListingManager {
             listing.buyout = 1;
         }
 
+        if (listing.timestamp !== undefined) {
+            delete listing.timestamp;
+        }
+
+        if (listing.value !== undefined) {
+            delete listing.value;
+        }
+
         return listing;
     }
 
