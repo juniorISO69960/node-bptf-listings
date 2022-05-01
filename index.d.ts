@@ -65,6 +65,8 @@ declare class ListingManager extends EventEmitter {
 
     createListings(listings: ListingManager.CreateListing[]): void;
 
+    updateListing(listingId: string, properties: UpdateListing): void;
+
     removeListing(listingId: string): void;
 
     removeListings(listingIds: string[]): void;
@@ -114,17 +116,6 @@ declare class ListingManager extends EventEmitter {
     on(event: 'massDeleteArchiveSuccessful', handler: (response: Record<string, unknown>) => void): this;
 }
 
-interface Create {
-    time: number;
-    id?: string; // only when intent 1 (sell)
-    sku?: string; // only when intent 0 (buy)
-    intent: 0 | 1;
-    quantity?: number;
-    promoted: 0 | 1;
-    details: string;
-    currencies: TF2Currencies;
-}
-
 declare namespace ListingManager {
     interface Item {
         defindex: number;
@@ -153,6 +144,12 @@ declare namespace ListingManager {
         promoted?: 0 | 1;
         currencies: TF2Currencies;
         time: number;
+    }
+
+    interface UpdateListing {
+        id: string;
+        details: string;
+        currencies: string;
     }
 
     export class Listing {
