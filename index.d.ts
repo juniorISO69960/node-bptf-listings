@@ -147,7 +147,6 @@ declare namespace ListingManager {
     }
 
     interface UpdateListing {
-        id: string;
         details: string;
         currencies: string;
     }
