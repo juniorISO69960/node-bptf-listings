@@ -148,7 +148,7 @@ declare namespace ListingManager {
 
     interface UpdateListing {
         details: string;
-        currencies: string;
+        currencies: TF2Currencies;
     }
 
     export class Listing {
