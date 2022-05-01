@@ -699,7 +699,7 @@ class ListingManager {
                 let archived = 0;
                 let errors = [];
 
-                body.forEach(element => {
+                body.forEach((element, index) => {
                     if (element.result) {
                         // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
                         created++;
@@ -709,7 +709,7 @@ class ListingManager {
                             archived++;
                         }
                     } else if (element.error) {
-                        errors.push(element.error);
+                        errors.push({ listing: batch[index], error: element.error });
                     }
 
                     // element.error:
