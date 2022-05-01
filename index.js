@@ -276,7 +276,7 @@ class ListingManager {
 
             this.cap = body.cap;
             this.promotes = body.promotes_remaining;
-            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this));
+            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, false));
 
             // Populate map
             this._listings = {};
