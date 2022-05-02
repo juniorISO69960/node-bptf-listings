@@ -779,6 +779,39 @@ class ListingManager {
 
             this.emit('updateListingsSuccessful', { updated: body.updated?.length, errors: body.errors });
 
+            if (Array.isArray(body.errors) && body.errors.length > 0) {
+                // got some error
+                body.errors.forEach(error => {
+                    // error<{ id: string, index: number, message: string }>
+                    if (error.message === 'Item not found') {
+                        // The listing might has been put into archived listing
+                        const listingId = error.id;
+                        const listingIndex = this.listings.findIndex(listing => listing.id === listingId);
+
+                        if (listingIndex >= 0) {
+                            const toRelist = this.listings[listingIndex];
+                            const reCreateListing = {
+                                time: toRelist.time || Math.floor(new Date().getTime() / 1000),
+                                intent: toRelist.intent,
+                                details: toRelist.details,
+                                currencies: toRelist.currencies
+                            };
+                            if (toRelist.intent === 0) {
+                                reCreateListing['sku'] = toRelist.getSKU();
+                            } else {
+                                reCreateListing['id'] = toRelist.item.id;
+                                reCreateListing['promoted'] = toRelist.promoted;
+                            }
+
+                            this.createListing(reCreateListing);
+
+                            delete this._listings[toRelist.intent === 0 ? toRelist.getSKU() : toRelist.item.id];
+                            this.listings.splice(listingIndex, 1);
+                        }
+                    }
+                })
+            }
+ 
             update.forEach(el => {
                 const index = this.listings.findIndex(listing => listing.id === el.id);
                 if (index >= 0) {
