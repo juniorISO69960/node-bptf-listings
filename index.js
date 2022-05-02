@@ -694,6 +694,9 @@ class ListingManager {
                 return callback(err);
             }
 
+            const waitForInventory = [];
+            const retryListings = [];
+
             if (Array.isArray(body)) {
                 let created = 0;
                 let archived = 0;
@@ -710,6 +713,24 @@ class ListingManager {
                         }
                     } else if (element.error) {
                         errors.push({ listing: batch[index], error: element.error });
+
+                        const identifier = batch[index].intent === 0 ? batch[index].sku : batch[index].id;
+
+                        if (element.error.message === '') {
+                            waitForInventory.push(identifier);
+                        } else if (element.error.message.includes('as it already exists')) {
+                            // This error should be extremely rare
+
+                            // Find listing matching the identifier in create queue
+                            const match = this.actions.create.find(formatted =>
+                                this._isSameByIdentifier(formatted, formatted.intent, identifier)
+                            );
+
+                            if (match !== undefined) {
+                                // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
+                                retryListings.push(match.intent === 0 ? identifier : match.id);
+                            }
+                        }
                     }
 
                     // element.error:
@@ -723,11 +744,31 @@ class ListingManager {
             }
 
             this.actions.create = this.actions.create.filter(formatted => {
+                if (formatted.intent === 1 && waitForInventory.includes(formatted.id)) {
+                    if (formatted.attempt !== undefined) {
+                        // We have already tried to list before, remove it from the queue
+                        return false;
+                    }
+
+                    // We should wait for the inventory to update
+                    formatted.attempt = this._lastInventoryUpdate;
+                    return true;
+                }
+
+                if (
+                    formatted.retry !== true &&
+                    retryListings.includes(formatted.intent === 0 ? formatted.sku : formatted.id)
+                ) {
+                    // A similar listing was already made, we will need to remove the old listing and then try and add this one again
+                    formatted.retry = true;
+                    return true;
+                }
+
                 const index = batch.findIndex(v => this._isSame(formatted, v));
 
                 if (index !== -1) {
                     // Listing was created, remove it from the batch and from the actions map
-                    delete this._actions.create[formatted.intent == 0 ? formatted.sku : formatted.id];
+                    delete this._actions.create[formatted.intent === 0 ? formatted.sku : formatted.id];
                     batch.splice(index, 1);
                 }
 
@@ -809,9 +850,9 @@ class ListingManager {
                             this.listings.splice(listingIndex, 1);
                         }
                     }
-                })
+                });
             }
- 
+
             update.forEach(el => {
                 const index = this.listings.findIndex(listing => listing.id === el.id);
                 if (index >= 0) {
