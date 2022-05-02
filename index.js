@@ -67,6 +67,28 @@ class ListingManager {
         this.userID = userID;
     }
 
+    setRequestOptions(method, url, body) {
+        const options = {
+            method,
+            url,
+            headers: {
+                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                Cookie: 'user-id=' + this.userID
+            },
+            qs: {
+                token: this.token
+            },
+            json: true,
+            gzip: true
+        };
+
+        if (body) {
+            options['body'] = body;
+        }
+
+        return options;
+    }
+
     /**
      * Initializes the module
      * @param {Function} callback
@@ -126,20 +148,7 @@ class ListingManager {
             return;
         }
 
-        const options = {
-            method: 'POST',
-            url: 'https://api.backpack.tf/api/agent/pulse',
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            json: true,
-            gzip: true
-        };
-
+        const options = this.setRequestOptions('POST', 'https://api.backpack.tf/api/agent/pulse');
         request(options, (err, response, body) => {
             if (err) {
                 return callback(err);
@@ -167,20 +176,7 @@ class ListingManager {
             return;
         }
 
-        const options = {
-            method: 'POST',
-            url: 'https://api.backpack.tf/api/agent/stop',
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            json: true,
-            gzip: true
-        };
-
+        const options = this.setRequestOptions('POST', 'https://api.backpack.tf/api/agent/stop');
         request(options, (err, response, body) => {
             if (err) {
                 return callback(err);
@@ -197,19 +193,10 @@ class ListingManager {
      * @param {Function} callback
      */
     _updateInventory(callback) {
-        const options = {
-            method: 'POST',
-            url: `https://api.backpack.tf/api/inventory/${this.steamid.getSteamID64()}/refresh`,
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            gzip: true,
-            json: true
-        };
+        const options = this.setRequestOptions(
+            'POST',
+            `https://api.backpack.tf/api/inventory/${this.steamid.getSteamID64()}/refresh`
+        );
 
         request(options, (err, response, body) => {
             if (err) {
@@ -252,23 +239,9 @@ class ListingManager {
 
         // We will still use v1 for active listings
 
-        const options = {
-            method: 'GET',
-            url: 'https://api.backpack.tf/api/classifieds/listings/v1',
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: {
-                automatic: 'all'
-            },
-            json: true,
-            gzip: true
-        };
-
+        const options = this.setRequestOptions('GET', 'https://api.backpack.tf/api/classifieds/listings/v1', {
+            automatic: 'all'
+        });
         request(options, (err, response, body) => {
             if (err) {
                 return callback(err);
@@ -672,20 +645,11 @@ class ListingManager {
             .filter(listing => listing.attempt !== this._lastInventoryUpdate)
             .slice(0, this.batchSize);
 
-        const options = {
-            method: 'POST',
-            url: 'https://api.backpack.tf/api/v2/classifieds/listings/batch',
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: batch,
-            json: true,
-            gzip: true
-        };
+        const options = this.setRequestOptions(
+            'POST',
+            'https://api.backpack.tf/api/v2/classifieds/listings/batch',
+            batch
+        );
 
         request(options, (err, response, body) => {
             //TODO response
@@ -796,20 +760,11 @@ class ListingManager {
                 ? this.actions.update.slice(0, this.batchSize)
                 : this.actions.update;
 
-        const options = {
-            method: 'PATCH',
-            url: 'https://api.backpack.tf/api/v2/classifieds/listings/batch',
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: update,
-            json: true,
-            gzip: true
-        };
+        const options = this.setRequestOptions(
+            'PATCH',
+            'https://api.backpack.tf/api/v2/classifieds/listings/batch',
+            update
+        );
 
         request(options, (err, response, body) => {
             if (err) {
@@ -888,22 +843,10 @@ class ListingManager {
         const batchSize = this.actions.remove.length > 1000 ? 1000 : this.actions.remove.length;
         const remove = this.actions.remove.slice(0, batchSize);
 
-        const options = {
-            method: 'DELETE',
-            url: 'https://api.backpack.tf/api/classifieds/delete/v1', //keep using old api, as it does not seem to have any item limit
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            },
-            body: {
-                listing_ids: remove
-            },
-            json: true,
-            gzip: true
-        };
+        //keep using old api, as it does not seem to have any item limit
+        const options = this.setRequestOptions('DELETE', 'https://api.backpack.tf/api/classifieds/delete/v1', {
+            listings_id: remove
+        });
 
         request(options, (err, response, body) => {
             if (err) {
@@ -935,17 +878,7 @@ class ListingManager {
 
         //TODO: ratelimit - 60 sec
 
-        const options = {
-            method: 'DELETE',
-            url: `https://api.backpack.tf/api/v2/classifieds/listings`, // 1 minute cooldown
-            headers: {
-                'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                Cookie: 'user-id=' + this.userID
-            },
-            qs: {
-                token: this.token
-            }
-        };
+        const options = this.setRequestOptions('DELETE', `https://api.backpack.tf/api/v2/classifieds/listings`);
 
         if ([0, 1].includes(intent)) {
             options.body['intent'] = intent;
@@ -959,17 +892,7 @@ class ListingManager {
 
             this.emit('massDeleteListingsSuccessful', body1);
 
-            const options2 = {
-                method: 'DELETE',
-                url: `https://api.backpack.tf/api/v2/classifieds/archive`, // 1 minute cooldown
-                headers: {
-                    'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                    Cookie: 'user-id=' + this.userID
-                },
-                qs: {
-                    token: this.token
-                }
-            };
+            const options2 = this.setRequestOptions('DELETE', `https://api.backpack.tf/api/v2/classifieds/archive`);
 
             if ([0, 1].includes(intent)) {
                 options2.body['intent'] = intent;
