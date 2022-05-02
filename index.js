@@ -1061,7 +1061,7 @@ class ListingManager {
             if (schemaItem['item_slot'] === 'taunt') {
                 formatItem['attributes'].push({
                     defindex: 2041,
-                    float_value: item.effect
+                    value: item.effect
                 });
             } else {
                 formatItem['attributes'].push({
