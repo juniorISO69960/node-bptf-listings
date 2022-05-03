@@ -680,7 +680,7 @@ class ListingManager {
 
                         const identifier = batch[index].intent === 0 ? batch[index].sku : batch[index].id;
 
-                        if (element.error.message === '') {
+                        if (element.error.message === '' || element.error.message.includes('timestamp')) {
                             waitForInventory.push(identifier);
                         } else if (element.error.message.includes('as it already exists')) {
                             // This error should be extremely rare
