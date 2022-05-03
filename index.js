@@ -373,7 +373,6 @@ class ListingManager {
 
         if (listing.archived) {
             // if archived, we recreate it.
-            console.log('is archived');
             const toRecreate = Object.assign(
                 {},
                 {
@@ -393,15 +392,11 @@ class ListingManager {
                 toRecreate[key] = properties[key];
             }
 
-            console.log('toRecreate:', toRecreate);
-
             const formatted = this._formatListing(toRecreate);
 
             if (formatted !== null) {
-                console.log('formatted !== null');
                 const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
                 if (match !== null) {
-                    console.log('match !== null');
                     match.remove();
                 }
     
