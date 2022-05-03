@@ -136,7 +136,7 @@ class Listing {
      */
     // @param {Number} [properties.quantity]
     update(properties) {
-        this._manager.updateListing(this.id, properties);
+        this._manager.updateListing(this, properties);
     }
 
     /**

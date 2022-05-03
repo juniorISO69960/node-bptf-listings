@@ -42,7 +42,6 @@ class ListingManager {
         this.cap = null;
         this.promotes = null;
 
-        // TODO: Archived listings management
         this.listings = [];
 
         this.actions = {
@@ -231,7 +230,7 @@ class ListingManager {
      * Gets the listings that you have on backpack.tf
      * @param {Function} callback
      */
-    getListings(callback) {
+     getListings(callback) {
         if (!this.token) {
             callback(new Error('No token set (yet)'));
             return;
@@ -242,44 +241,60 @@ class ListingManager {
         const options = this.setRequestOptions('GET', 'https://api.backpack.tf/api/classifieds/listings/v1', {
             automatic: 'all'
         });
+
         request(options, (err, response, body) => {
             if (err) {
-                return callback(err);
+                return callback('Error getting active listings', err);
             }
 
             this.cap = body.cap;
             this.promotes = body.promotes_remaining;
             this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
-            // Populate map
-            this._listings = {};
-            this.listings.forEach(listing => {
-                this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
-            });
-
-            this._createdListingsCount = 0;
-
-            // Go through create queue and find listings that need retrying
-            this.actions.create.forEach(formatted => {
-                if (formatted.retry !== undefined) {
-                    // Look for a listing that has a matching sku / id
-                    const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-                    if (match !== null) {
-                        // Found match, remove the listing and unset retry property
-                        match.remove();
+            getAllArchivedListings(
+                0,
+                {
+                    'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                    Cookie: 'user-id=' + this.userID
+                },
+                this.token,
+                [],
+                (err, archivedListings) => {
+                    if (err) {
+                        return callback('Error getting archived listings', err);
                     }
+
+                    this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
+
+                    // Populate map
+                    this._listings = {};
+                    this.listings.forEach(listing => {
+                        this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
+                    });
+
+                    this._createdListingsCount = 0;
+
+                    // Go through create queue and find listings that need retrying
+                    this.actions.create.forEach(formatted => {
+                        if (formatted.retry !== undefined) {
+                            // Look for a listing that has a matching sku / id
+                            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
+                            if (match !== null) {
+                                // Found match, remove the listing and unset retry property
+                                match.remove();
+                            }
+                        }
+                    });
+
+                    if (this.ready) {
+                        this.emit('listings', this.listings);
+                    }
+
+                    return callback(null, body);
                 }
-            });
-
-            if (this.ready) {
-                this.emit('listings', this.listings);
-            }
-
-            return callback(null, body);
+            );
         }).end();
     }
-
-    // TODO: Find archived listing(s)
 
     /**
      * Searches for one specific listing by sku or assetid
@@ -346,21 +361,57 @@ class ListingManager {
         }
     }
 
-    // TODO: Update archived listing(s)
-
     /**
      * Enqueues a list of listings to be made
-     * @param {String} id listing ID
+     * @param {String} listing listing object
      * @param {Object} properties properties
      */
-    updateListing(id, properties) {
+     updateListing(listing, properties) {
         if (!this.ready) {
             throw new Error('Module has not been successfully initialized');
         }
 
-        const formatted = { id, body: properties };
+        if (listing.archived) {
+            // if archived, we recreate it.
+            console.log('is archived');
+            const toRecreate = Object.assign(
+                {},
+                {
+                    time: listing.time || Math.floor(new Date().getTime() / 1000),
+                    sku: listing.sku,
+                    intent: listing.intent,
+                    currencies: listing.currencies,
+                    details: listing.details
+                }
+            );
 
-        this._action('update', formatted);
+            for (const key in properties) {
+                if (!properties.hasOwnProperty(key)) {
+                    continue;
+                }
+
+                toRecreate[key] = properties[key];
+            }
+
+            console.log('toRecreate:', toRecreate);
+
+            const formatted = this._formatListing(toRecreate);
+
+            if (formatted !== null) {
+                console.log('formatted !== null');
+                const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
+                if (match !== null) {
+                    console.log('match !== null');
+                    match.remove();
+                }
+    
+                this._action('create', formatted);
+            }
+        } else {
+            const formatted = { id: listing.id, body: properties };
+
+            this._action('update', formatted);
+        }
     }
 
     /**
@@ -1280,4 +1331,51 @@ function noop() {}
  */
 function isObject(val) {
     return val != null && typeof val === 'object' && Array.isArray(val) === false;
+}
+/**
+ * Recursive function that will get all archived listings
+ * @param {Number} skip
+ * @param {Object} headers
+ * @param {String} token
+ * @param {Array} archivedListings
+ * @param {Function} callback
+ */
+ function getAllArchivedListings(skip, headers, token, archivedListings, callback) {
+    if (callback === undefined) {
+        callback = archivedListings;
+    }
+
+    const input = {
+        token,
+        skip,
+        limit: 100
+    };
+
+    const options = {
+        method: 'GET',
+        url: 'https://api.backpack.tf/api/v2/classifieds/archive',
+        headers,
+        qs: input,
+        json: true,
+        gzip: true
+    };
+
+    setTimeout(() => {
+        request(options, (err, response, body) => {
+            if (err) {
+                return callback(err);
+            }
+
+            archivedListings = (archivedListings || []).concat(body.results.filter(raw => raw.appid == 440));
+            const total = body.cursor.total;
+            const diff = total - body.cursor.skip;
+
+            if (diff > 0) {
+                skip = skip + 100;
+                getAllArchivedListings(skip, headers, token, archivedListings, callback);
+            } else {
+                callback(null, archivedListings);
+            }
+        }).end();
+    }, 1 * 1000);
 }
