@@ -55,7 +55,7 @@ declare class ListingManager extends EventEmitter {
 
     stopUserAgent(callback: (err: any, body?: { status: string }) => void): void;
 
-    getListings(callback: (err: any, body?: any) => any): void;
+    getListings(onShutdown: boolean, callback: (err: any, body?: any) => any): void;
 
     findListing(search: string | number): ListingManager.Listing | null;
 

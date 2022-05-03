@@ -228,9 +228,10 @@ class ListingManager {
 
     /**
      * Gets the listings that you have on backpack.tf
+     * @param {Boolean} onShutdown
      * @param {Function} callback
      */
-     getListings(callback) {
+    getListings(onShutdown, callback) {
         if (!this.token) {
             callback(new Error('No token set (yet)'));
             return;
@@ -251,6 +252,39 @@ class ListingManager {
             this.promotes = body.promotes_remaining;
             this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
+            const populate = () => {
+                // Populate map
+                this._listings = {};
+                this.listings.forEach(listing => {
+                    this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
+                });
+
+                this._createdListingsCount = 0;
+
+                // Go through create queue and find listings that need retrying
+                this.actions.create.forEach(formatted => {
+                    if (formatted.retry !== undefined) {
+                        // Look for a listing that has a matching sku / id
+                        const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
+                        if (match !== null) {
+                            // Found match, remove the listing and unset retry property
+                            match.remove();
+                        }
+                    }
+                });
+
+                if (this.ready) {
+                    this.emit('listings', this.listings);
+                }
+
+                return callback(null, body);
+            };
+
+            if (onShutdown) {
+                // Don't need to get archived listings on shutdown
+                populate();
+            }
+
             getAllArchivedListings(
                 0,
                 {
@@ -266,31 +300,7 @@ class ListingManager {
 
                     this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
 
-                    // Populate map
-                    this._listings = {};
-                    this.listings.forEach(listing => {
-                        this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
-                    });
-
-                    this._createdListingsCount = 0;
-
-                    // Go through create queue and find listings that need retrying
-                    this.actions.create.forEach(formatted => {
-                        if (formatted.retry !== undefined) {
-                            // Look for a listing that has a matching sku / id
-                            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-                            if (match !== null) {
-                                // Found match, remove the listing and unset retry property
-                                match.remove();
-                            }
-                        }
-                    });
-
-                    if (this.ready) {
-                        this.emit('listings', this.listings);
-                    }
-
-                    return callback(null, body);
+                    populate();
                 }
             );
         }).end();
@@ -366,7 +376,7 @@ class ListingManager {
      * @param {String} listing listing object
      * @param {Object} properties properties
      */
-     updateListing(listing, properties) {
+    updateListing(listing, properties) {
         if (!this.ready) {
             throw new Error('Module has not been successfully initialized');
         }
@@ -399,7 +409,7 @@ class ListingManager {
                 if (match !== null) {
                     match.remove();
                 }
-    
+
                 this._action('create', formatted);
             }
         } else {
@@ -1335,7 +1345,7 @@ function isObject(val) {
  * @param {Array} archivedListings
  * @param {Function} callback
  */
- function getAllArchivedListings(skip, headers, token, archivedListings, callback) {
+function getAllArchivedListings(skip, headers, token, archivedListings, callback) {
     if (callback === undefined) {
         callback = archivedListings;
     }
