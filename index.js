@@ -277,12 +277,12 @@ class ListingManager {
                     this.emit('listings', this.listings);
                 }
 
-                return callback(null, body);
+                callback(null, body);
             };
 
             if (onShutdown) {
                 // Don't need to get archived listings on shutdown
-                populate();
+                return populate();
             }
 
             getAllArchivedListings(
@@ -300,7 +300,7 @@ class ListingManager {
 
                     this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
 
-                    populate();
+                    return populate();
                 }
             );
         }).end();
@@ -608,7 +608,7 @@ class ListingManager {
         async.series(
             [
                 callback => {
-                    this.getListings(callback);
+                    this.getListings(false, callback);
                 }
             ],
             err => {
@@ -667,7 +667,7 @@ class ListingManager {
                     callback(null);
                 } else {
                     // Queues are empty, get listings
-                    this.getListings(() => {
+                    this.getListings(false, () => {
                         this._processingActions = false;
                         this._startTimeout();
                         callback(null);
