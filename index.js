@@ -901,7 +901,7 @@ class ListingManager {
 
         //keep using old api, as it does not seem to have any item limit
         const options = this.setRequestOptions('DELETE', 'https://api.backpack.tf/api/classifieds/delete/v1', {
-            listings_id: remove
+            listing_ids: remove
         });
 
         request(options, (err, response, body) => {
