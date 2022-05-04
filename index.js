@@ -580,6 +580,10 @@ class ListingManager {
             ListingManager.prototype._updateInventory.bind(this, () => {}),
             60000
         );
+        this._getBatchOpLimitInterval = setInterval(
+            ListingManager.prototype.getBatchOpLimit.bind(this, () => {}),
+            60000
+        );
     }
 
     /**
@@ -591,6 +595,7 @@ class ListingManager {
         clearInterval(this._updateListingsInterval);
         clearInterval(this._userAgentInterval);
         clearInterval(this._inventoryInterval);
+        clearInterval(this._getBatchOpLimitInterval);
 
         this.stopUserAgent(() => {
             // Reset values
@@ -668,51 +673,42 @@ class ListingManager {
             callback(null);
             return;
         }
+        this._processingActions = true;
 
-        this.getBatchOpLimit(err => {
-            if (err) {
-                // try another time
-                callback(null);
-                return;
-            }
-
-            this._processingActions = true;
-
-            async.series(
-                {
-                    update: callback => {
-                        this._update(callback);
-                    },
-                    delete: callback => {
-                        this._delete(callback);
-                    },
-                    create: callback => {
-                        this._create(callback);
-                    }
+        async.series(
+            {
+                update: callback => {
+                    this._update(callback);
                 },
-                (err, result) => {
-                    // TODO: Only get listings if we created or deleted listings
+                delete: callback => {
+                    this._delete(callback);
+                },
+                create: callback => {
+                    this._create(callback);
+                }
+            },
+            (err, result) => {
+                // TODO: Only get listings if we created or deleted listings
 
-                    if (
-                        this.actions.remove.length !== 0 ||
-                        this.actions.update.length !== 0 ||
-                        this._listingsWaitingForRetry() - this.actions.create.length !== 0
-                    ) {
+                if (
+                    this.actions.remove.length !== 0 ||
+                    this.actions.update.length !== 0 ||
+                    this._listingsWaitingForRetry() - this.actions.create.length !== 0
+                ) {
+                    this._processingActions = false;
+                    // There are still things to do
+                    this._startTimeout();
+                    callback(null);
+                } else {
+                    // Queues are empty, get listings
+                    this.getListings(false, () => {
                         this._processingActions = false;
-                        // There are still things to do
                         this._startTimeout();
                         callback(null);
-                    } else {
-                        // Queues are empty, get listings
-                        this.getListings(false, () => {
-                            this._processingActions = false;
-                            this._startTimeout();
-                            callback(null);
-                        });
-                    }
+                    });
                 }
-            );
-        });
+            }
+        );
     }
 
     /**
