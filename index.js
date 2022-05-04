@@ -118,19 +118,25 @@ class ListingManager {
                     return callback(err);
                 }
 
-                this._updateInventory(() => {
-                    this._startTimers();
+                this.getBatchOpLimit(err => {
+                    if (err) {
+                        return callback(err);
+                    }
 
-                    this.ready = true;
-                    this.emit('ready');
+                    this._updateInventory(() => {
+                        this._startTimers();
 
-                    // Emit listings after initializing
-                    this.emit('listings', this.listings);
+                        this.ready = true;
+                        this.emit('ready');
 
-                    // Start processing actions if there are any
-                    this._processActions();
+                        // Emit listings after initializing
+                        this.emit('listings', this.listings);
 
-                    return callback(null);
+                        // Start processing actions if there are any
+                        this._processActions();
+
+                        return callback(null);
+                    });
                 });
             });
         });
@@ -182,6 +188,30 @@ class ListingManager {
             }
 
             this.emit('pulse', { status: body.status });
+
+            return callback(null, body);
+        }).end();
+    }
+
+    /**
+     * Get the batch operation limit
+     * @param {Function} callback
+     */
+    getBatchOpLimit(callback) {
+        if (!this.token) {
+            callback(new Error('No token set (yet)'));
+            return;
+        }
+
+        const options = this.setRequestOptions('GET', 'https://api.backpack.tf/api/v2/classifieds/listings/batch');
+        request(options, (err, response, body) => {
+            if (err) {
+                return callback(err);
+            }
+
+            this.batchSize = body.opLimit;
+
+            this.emit('batchLimit', body.opLimit);
 
             return callback(null, body);
         }).end();
@@ -639,42 +669,50 @@ class ListingManager {
             return;
         }
 
-        this._processingActions = true;
+        this.getBatchOpLimit(err => {
+            if (err) {
+                // try another time
+                callback(null);
+                return;
+            }
 
-        async.series(
-            {
-                update: callback => {
-                    this._update(callback);
-                },
-                delete: callback => {
-                    this._delete(callback);
-                },
-                create: callback => {
-                    this._create(callback);
-                }
-            },
-            (err, result) => {
-                // TODO: Only get listings if we created or deleted listings
+            this._processingActions = true;
 
-                if (
-                    this.actions.remove.length !== 0 ||
-                    this.actions.update.length !== 0 ||
-                    this._listingsWaitingForRetry() - this.actions.create.length !== 0
-                ) {
-                    this._processingActions = false;
-                    // There are still things to do
-                    this._startTimeout();
-                    callback(null);
-                } else {
-                    // Queues are empty, get listings
-                    this.getListings(false, () => {
+            async.series(
+                {
+                    update: callback => {
+                        this._update(callback);
+                    },
+                    delete: callback => {
+                        this._delete(callback);
+                    },
+                    create: callback => {
+                        this._create(callback);
+                    }
+                },
+                (err, result) => {
+                    // TODO: Only get listings if we created or deleted listings
+
+                    if (
+                        this.actions.remove.length !== 0 ||
+                        this.actions.update.length !== 0 ||
+                        this._listingsWaitingForRetry() - this.actions.create.length !== 0
+                    ) {
                         this._processingActions = false;
+                        // There are still things to do
                         this._startTimeout();
                         callback(null);
-                    });
+                    } else {
+                        // Queues are empty, get listings
+                        this.getListings(false, () => {
+                            this._processingActions = false;
+                            this._startTimeout();
+                            callback(null);
+                        });
+                    }
                 }
-            }
-        );
+            );
+        });
     }
 
     /**
