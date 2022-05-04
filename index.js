@@ -739,6 +739,11 @@ class ListingManager {
             .filter(listing => listing.attempt !== this._lastInventoryUpdate)
             .slice(0, this.batchSize);
 
+        if (batch.length === 0) {
+            callback(null, null);
+            return;
+        }
+
         const options = this.setRequestOptions(
             'POST',
             'https://api.backpack.tf/api/v2/classifieds/listings/batch',
@@ -854,6 +859,11 @@ class ListingManager {
                 ? this.actions.update.slice(0, this.batchSize)
                 : this.actions.update;
 
+        if (update.length === 0) {
+            callback(null, null);
+            return;
+        }
+
         const options = this.setRequestOptions(
             'PATCH',
             'https://api.backpack.tf/api/v2/classifieds/listings/batch',
@@ -936,6 +946,11 @@ class ListingManager {
 
         const batchSize = this.actions.remove.length > 1000 ? 1000 : this.actions.remove.length;
         const remove = this.actions.remove.slice(0, batchSize);
+
+        if (remove.length === 0) {
+            callback(null, null);
+            return;
+        }
 
         //keep using old api, as it does not seem to have any item limit
         const options = this.setRequestOptions('DELETE', 'https://api.backpack.tf/api/classifieds/delete/v1', {
