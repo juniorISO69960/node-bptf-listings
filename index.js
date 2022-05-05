@@ -656,18 +656,11 @@ class ListingManager {
             callback = noop;
         }
 
-        // Might need to do something here for update
-        if (
-            this._processingActions === true ||
-            (this.actions.remove.length === 0 &&
-                this._listingsWaitingForRetry() +
-                    this._listingsWaitingForInventoryCount() -
-                    this.actions.create.length ===
-                    0)
-        ) {
+        if (this._processingActions === true) {
             callback(null);
             return;
         }
+
         this._processingActions = true;
 
         async.series(
