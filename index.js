@@ -435,11 +435,6 @@ class ListingManager {
             const formatted = this._formatListing(toRecreate);
 
             if (formatted !== null) {
-                const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-                if (match !== null) {
-                    match.remove();
-                }
-
                 this._action('create', formatted);
             }
         } else {
