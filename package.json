@@ -23,7 +23,7 @@
     "@tf2autobot/tf2-sku": "^2.0.3",
     "async": "^3.2.3",
     "events": "^3.3.0",
-    "request-retry-dayjs": "^1.1.2",
+    "request-retry-dayjs": "^1.1.3",
     "steamid": "^2.0.0",
     "util": "^0.12.4"
   }
