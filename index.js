@@ -296,7 +296,7 @@ class ListingManager {
                     if (formatted.retry !== undefined) {
                         // Look for a listing that has a matching sku / id
                         const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-                        if (match !== null) {
+                        if (match !== null && match.archived === false) {
                             // Found match, remove the listing and unset retry property
                             match.remove();
                         }
@@ -393,7 +393,7 @@ class ListingManager {
 
         if (formatted !== null) {
             const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-            if (match !== null) {
+            if (match !== null  && match.archived === false) {
                 match.remove();
             }
 
