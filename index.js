@@ -936,8 +936,10 @@ class ListingManager {
             return;
         }
 
-        const batchSize = this.actions.remove.length > 1000 ? 1000 : this.actions.remove.length;
-        const remove = this.actions.remove.slice(0, batchSize);
+        const remove =
+            this.actions.remove.length > this.batchSize
+                ? this.actions.remove.slice(0, this.batchSize)
+                : this.actions.remove;
 
         if (remove.length === 0) {
             callback(null, null);
