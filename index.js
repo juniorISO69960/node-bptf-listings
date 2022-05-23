@@ -446,20 +446,6 @@ class ListingManager {
 
     /**
      * Enqueus a list of listings or listing ids to be removed
-     * @param {Array<Object>|Array<String>} listings
-     */
-    removeListings(listings) {
-        if (!this.ready) {
-            throw new Error('Module has not been successfully initialized');
-        }
-
-        const formatted = listings.map(value => (!isObject(value) ? value : value.id));
-
-        this._action('remove', formatted);
-    }
-
-    /**
-     * Enqueus a list of listings or listing ids to be removed
      * @param {Object|String} listing
      */
     removeListing(listing) {
@@ -940,11 +926,6 @@ class ListingManager {
             this.actions.remove.length > this.batchSize
                 ? this.actions.remove.slice(0, this.batchSize)
                 : this.actions.remove;
-
-        if (remove.length === 0) {
-            callback(null, null);
-            return;
-        }
 
         //keep using old api, as it does not seem to have any item limit
         const options = this.setRequestOptions('DELETE', 'https://api.backpack.tf/api/classifieds/delete/v1', {
