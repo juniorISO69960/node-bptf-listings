@@ -467,8 +467,8 @@ class ListingManager {
             throw new Error('Module has not been successfully initialized');
         }
 
-        if (!isObject(listing)) {
-            this._action('remove', listing);
+        if (listing.archived) {
+            this._deleteArchived(listing.id);
         } else {
             this._action('remove', listing.id);
         }
@@ -972,6 +972,30 @@ class ListingManager {
             this.emit('actions', this.actions);
 
             return callback(null, body);
+        }).end();
+    }
+
+    _deleteArchived(listingId) {
+        // Delete a single archived listing - Immediate
+        const options = this.setRequestOptions(
+            'DELETE',
+            `https://api.backpack.tf/api/v2/classifieds/archive/${listingId}`
+        );
+
+        request(options, (err, response, body) => {
+            if (err) {
+                this.emit('deleteArchivedListingError', {
+                    error: err?.name,
+                    message: err?.message,
+                    statusCode: err?.statusCode
+                });
+                return callback(err);
+            }
+
+            // This return nothing (empty body)
+
+            // Update cached listings
+            this.listings = this.listings.filter(listing => listing.id === listingId);
         }).end();
     }
 

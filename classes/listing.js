@@ -143,7 +143,7 @@ class Listing {
      * Enqueues the listing to be removed
      */
     remove() {
-        this._manager.removeListing(this.id);
+        this._manager.removeListing(this);
     }
 
     /**
