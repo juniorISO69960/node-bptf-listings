@@ -393,7 +393,7 @@ class ListingManager {
 
         if (formatted !== null) {
             const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-            if (match !== null  && match.archived === false) {
+            if (match !== null && match.archived === false) {
                 match.remove();
             }
 
@@ -737,7 +737,11 @@ class ListingManager {
         request(options, (err, response, body) => {
             //TODO response
             if (err) {
-                this.emit('createListingsError', err);
+                this.emit('createListingsError', {
+                    error: err?.name,
+                    message: err?.message,
+                    statusCode: err?.statusCode
+                });
                 return callback(err);
             }
 
@@ -856,7 +860,11 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
-                this.emit('updateListingsError', err);
+                this.emit('updateListingsError', {
+                    error: err?.name,
+                    message: err?.message,
+                    statusCode: err?.statusCode
+                });
                 // Might need to do something if failed, like if item id not found.
                 return callback(err);
             }
@@ -943,7 +951,11 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
-                this.emit('deleteListingsError', err);
+                this.emit('deleteListingsError', {
+                    error: err?.name,
+                    message: err?.message,
+                    statusCode: err?.statusCode
+                });
                 return callback(err);
             }
 
@@ -979,7 +991,11 @@ class ListingManager {
 
         request(options, (err1, response1, body1) => {
             if (err1) {
-                this.emit('massDeleteListingsError', err1);
+                this.emit('massDeleteListingsError', {
+                    error: err1?.name,
+                    message: err1?.message,
+                    statusCode: err1?.statusCode
+                });
                 return callback(err1);
             }
 
@@ -993,7 +1009,11 @@ class ListingManager {
 
             request(options2, (err2, response2, body2) => {
                 if (err2) {
-                    this.emit('massDeleteArchiveError', err2);
+                    this.emit('massDeleteArchiveError', {
+                        error: err2?.name,
+                        message: err2?.message,
+                        statusCode: err2?.statusCode
+                    });
                     return callback(err2);
                 }
 
