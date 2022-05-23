@@ -92,26 +92,30 @@ declare class ListingManager extends EventEmitter {
 
     on(event: 'inventory', handler: (lastUpdated: number) => void): this;
 
-    on(event: 'createListingsError', handler: (err: Error) => void): this;
+    on(event: 'createListingsError', handler: (err: ListingManager.CustomError) => void): this;
 
     on(
         event: 'createListingsSuccessful',
         handler: (response: { created: number; archived: number; errors: { message: string }[] }) => void
     ): this;
 
-    on(event: 'updateListingsError', handler: (err: Error) => void): this;
+    on(event: 'updateListingsError', handler: (err: ListingManager.CustomError) => void): this;
 
     on(event: 'updateListingsSuccessful', handler: (response: { updated: number; errors: [] }) => void): this;
 
-    on(event: 'deleteListingsError', handler: (err: Error) => void): this;
+    on(event: 'deleteListingsError', handler: (err: ListingManager.CustomError) => void): this;
 
     on(event: 'deleteListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
 
-    on(event: 'massDeleteListingsError', handler: (err: Error) => void): this;
+    on(event: 'massDeleteListingsError', handler: (err: ListingManager.CustomError) => void): this;
 
     on(event: 'massDeleteListingsSuccessful', handler: (response: Record<string, unknown>) => void): this;
 
-    on(event: 'massDeleteArchiveError', handler: (err: Error) => void): this;
+    on(event: 'deleteArchivedListingError', handler: (err: ListingManager.CustomError) => void): this;
+
+    on(event: 'deleteArchivedListingSuccessful', handler: (response: boolean) => void): this;
+
+    on(event: 'massDeleteArchiveError', handler: (err: ListingManager.CustomError) => void): this;
 
     on(event: 'massDeleteArchiveSuccessful', handler: (response: Record<string, unknown>) => void): this;
 }
@@ -149,6 +153,12 @@ declare namespace ListingManager {
     interface UpdateListing {
         details: string;
         currencies: TF2Currencies;
+    }
+
+    interface CustomError {
+        error: string;
+        message: string;
+        statusCode: string | number;
     }
 
     export class Listing {

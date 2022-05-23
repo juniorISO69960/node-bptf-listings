@@ -721,7 +721,6 @@ class ListingManager {
         );
 
         request(options, (err, response, body) => {
-            //TODO response
             if (err) {
                 this.emit('createListingsError', {
                     error: err?.name,
@@ -974,6 +973,8 @@ class ListingManager {
             }
 
             // This return nothing (empty body)
+
+            this.emit('deleteArchivedListingSuccessful', true);
 
             // Update cached listings
             this.listings = this.listings.filter(listing => listing.id === listingId);
