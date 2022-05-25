@@ -969,7 +969,7 @@ class ListingManager {
                     message: err?.message,
                     statusCode: err?.statusCode
                 });
-                return callback(err);
+                return;
             }
 
             // This return nothing (empty body)
