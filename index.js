@@ -964,6 +964,14 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
+                if (this.deleteArchivedFailedAttempt === undefined) {
+                    this.deleteArchivedFailedAttempt[listingId] = 1;
+                } else {
+                    this.deleteArchivedFailedAttempt[listingId]++;
+                }
+
+                this.checkDeleteArchivedFailedAttempt(listingId);
+
                 this.emit('deleteArchivedListingError', {
                     error: err?.name,
                     message: err?.message,
@@ -979,6 +987,16 @@ class ListingManager {
             // Update cached listings
             this.listings = this.listings.filter(listing => listing.id === listingId);
         }).end();
+    }
+
+    checkDeleteArchivedFailedAttempt(listingId) {
+        if (this.deleteArchivedFailedAttempt[listingId] > 1) {
+            // if more than 3 times failed to delete a listing that is archived in
+            // memory, then remove it (the listing might not exist, or changed to active state)
+
+            this.listings = this.listings.filter(listing => listing.id === listingId);
+            delete this.deleteArchivedFailedAttempt[listingId];
+        }
     }
 
     /**
