@@ -50,6 +50,8 @@ class ListingManager {
             update: []
         };
 
+        this.deleteArchivedFailedAttempt = {};
+
         this.schema = options.schema || null;
 
         this._lastInventoryUpdate = null;
@@ -565,6 +567,15 @@ class ListingManager {
             ListingManager.prototype.getBatchOpLimit.bind(this, () => {}),
             60000
         );
+        this._checkArchivedListingsFailedToDeleteInterval = setInterval(
+            () => {
+                const listingIds = Object.keys(this.deleteArchivedFailedAttempt);
+                if (listingIds.length > 0) {
+                    this._deleteArchived(listingIds[0]);
+                }
+            },
+            15000 // Every 15 seconds (archived, so no problem)
+        );
     }
 
     /**
@@ -991,7 +1002,7 @@ class ListingManager {
 
     checkDeleteArchivedFailedAttempt(listingId) {
         if (this.deleteArchivedFailedAttempt[listingId] > 1) {
-            // if more than 3 times failed to delete a listing that is archived in
+            // if more than 1 times failed to delete a listing that is archived in
             // memory, then remove it (the listing might not exist, or changed to active state)
 
             this.listings = this.listings.filter(listing => listing.id === listingId);
