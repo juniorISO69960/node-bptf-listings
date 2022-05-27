@@ -980,7 +980,7 @@ class ListingManager {
                 if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
                     this.deleteArchivedFailedAttempt[listingId] = 1;
                 } else {
-                    this.deleteArchivedFailedAttempt[listingId]++;
+                    this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
                 }
 
                 this.checkDeleteArchivedFailedAttempt(listingId);
