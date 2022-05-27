@@ -975,7 +975,7 @@ class ListingManager {
 
         request(options, (err, response, body) => {
             if (err) {
-                if (this.deleteArchivedFailedAttempt === undefined) {
+                if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
                     this.deleteArchivedFailedAttempt[listingId] = 1;
                 } else {
                     this.deleteArchivedFailedAttempt[listingId]++;
