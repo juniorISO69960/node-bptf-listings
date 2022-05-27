@@ -588,6 +588,7 @@ class ListingManager {
         clearInterval(this._userAgentInterval);
         clearInterval(this._inventoryInterval);
         clearInterval(this._getBatchOpLimitInterval);
+        clearInterval(this._checkArchivedListingsFailedToDeleteInterval);
 
         this.stopUserAgent(() => {
             // Reset values
@@ -597,6 +598,7 @@ class ListingManager {
             this.promotes = null;
             this.actions = { create: [], remove: [], update: [] };
             this._actions = { create: {}, remove: {}, update: {} };
+            this._checkArchivedListingsFailedToDeleteInterval = {};
             this._lastInventoryUpdate = null;
             this._createdListingsCount = 0;
         });
