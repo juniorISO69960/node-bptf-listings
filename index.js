@@ -1482,7 +1482,7 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
         url: 'https://api.backpack.tf/api/v2/classifieds/archive',
         headers,
         params: {
-            token: this.token,
+            token,
             skip
         }
     };
@@ -1504,6 +1504,7 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
             })
             .catch(err => {
                 if (err) {
+                    console.error(err);
                     return callback(err);
                 }
             });
