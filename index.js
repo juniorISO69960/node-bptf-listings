@@ -83,7 +83,7 @@ class ListingManager {
         };
 
         if (body) {
-            options['data'] = JSON.stringify(body);
+            options['data'] = body;
         }
 
         return options;
