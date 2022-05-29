@@ -1,6 +1,6 @@
 const async = require('async');
 const SteamID = require('steamid');
-const request = require('request-retry-dayjs');
+const axios = require('axios').default;
 const SKU = require('@tf2autobot/tf2-sku');
 
 const inherits = require('util').inherits;
@@ -70,21 +70,20 @@ class ListingManager {
 
     setRequestOptions(method, url, body) {
         const options = {
+            url: url,
             method,
-            url,
+            baseURL: 'https://api.backpack.tf/api',
             headers: {
                 'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
                 Cookie: 'user-id=' + this.userID
             },
-            qs: {
+            params: {
                 token: this.token
-            },
-            json: true,
-            gzip: true
+            }
         };
 
         if (body) {
-            options['body'] = body;
+            options['data'] = JSON.stringify(body);
         }
 
         return options;
@@ -155,21 +154,26 @@ class ListingManager {
             return;
         }
 
-        const options = this.setRequestOptions('POST', 'https://api.backpack.tf/api/agent/pulse');
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
+        const options = this.setRequestOptions('POST', '/agent/pulse');
 
-            this.emit('pulse', {
-                status: body.status,
-                current_time: body.current_time,
-                expire_at: body.expire_at,
-                client: body.client
+        axios(options)
+            .then(response => {
+                const body = response.data;
+
+                this.emit('pulse', {
+                    status: body.status,
+                    current_time: body.current_time,
+                    expire_at: body.expire_at,
+                    client: body.client
+                });
+
+                return callback(null, body);
+            })
+            .catch(err => {
+                if (err) {
+                    return callback(err);
+                }
             });
-
-            return callback(null, body);
-        }).end();
     }
 
     /**
@@ -183,16 +187,21 @@ class ListingManager {
             return;
         }
 
-        const options = this.setRequestOptions('POST', 'https://api.backpack.tf/api/agent/stop');
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
+        const options = this.setRequestOptions('POST', '/agent/stop');
 
-            this.emit('pulse', { status: body.status });
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            return callback(null, body);
-        }).end();
+                this.emit('pulse', { status: body.status });
+
+                return callback(null, body);
+            })
+            .catch(err => {
+                if (err) {
+                    return callback(err);
+                }
+            });
     }
 
     /**
@@ -205,18 +214,22 @@ class ListingManager {
             return;
         }
 
-        const options = this.setRequestOptions('GET', 'https://api.backpack.tf/api/v2/classifieds/listings/batch');
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
+        const options = this.setRequestOptions('GET', '/v2/classifieds/listings/batch');
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            this.batchSize = body.opLimit;
+                this.batchSize = body.opLimit;
 
-            this.emit('batchLimit', body.opLimit);
+                this.emit('batchLimit', body.opLimit);
 
-            return callback(null, body);
-        }).end();
+                return callback(null, body);
+            })
+            .catch(err => {
+                if (err) {
+                    return callback(err);
+                }
+            });
     }
 
     /**
@@ -224,39 +237,38 @@ class ListingManager {
      * @param {Function} callback
      */
     _updateInventory(callback) {
-        const options = this.setRequestOptions(
-            'POST',
-            `https://api.backpack.tf/api/inventory/${this.steamid.getSteamID64()}/refresh`
-        );
+        const options = this.setRequestOptions('POST', `/inventory/${this.steamid.getSteamID64()}/refresh`);
 
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            if (response.status >= 400) {
-                return callback(new Error(response.status + ' (' + response.statusText + ')'));
-            }
+                if (response.status >= 400) {
+                    return callback(new Error(response.status + ' (' + response.statusText + ')'));
+                }
 
-            const time = body.last_update;
+                const time = body.last_update;
 
-            if (this._lastInventoryUpdate === null) {
-                this._lastInventoryUpdate = time;
-            } else if (time !== this._lastInventoryUpdate) {
-                // The inventory has updated on backpack.tf
-                this._lastInventoryUpdate = time;
+                if (this._lastInventoryUpdate === null) {
+                    this._lastInventoryUpdate = time;
+                } else if (time !== this._lastInventoryUpdate) {
+                    // The inventory has updated on backpack.tf
+                    this._lastInventoryUpdate = time;
 
-                this.emit('inventory', this._lastInventoryUpdate);
+                    this.emit('inventory', this._lastInventoryUpdate);
 
-                // The inventory has been updated on backpack.tf, try and make listings
-                this._processActions();
-            }
+                    // The inventory has been updated on backpack.tf, try and make listings
+                    this._processActions();
+                }
 
-            return callback(null);
-        }).end();
+                return callback(null);
+            })
+            .catch(err => {
+                if (err) {
+                    return callback(err);
+                }
+            });
     }
-
-    // TODO: getArchiveListings
 
     /**
      * Gets the listings that you have on backpack.tf
@@ -271,71 +283,75 @@ class ListingManager {
 
         // We will still use v1 for active listings
 
-        const options = this.setRequestOptions('GET', 'https://api.backpack.tf/api/classifieds/listings/v1', {
+        const options = this.setRequestOptions('GET', '/classifieds/listings/v1', {
             automatic: 'all'
         });
 
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback('Error getting active listings', err);
-            }
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            this.cap = body.cap;
-            this.promotes = body.promotes_remaining;
-            this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
+                this.cap = body.cap;
+                this.promotes = body.promotes_remaining;
+                this.listings = body.listings.filter(raw => raw.appid == 440).map(raw => new Listing(raw, this, false));
 
-            const populate = () => {
-                // Populate map
-                this._listings = {};
-                this.listings.forEach(listing => {
-                    this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
-                });
+                const populate = () => {
+                    // Populate map
+                    this._listings = {};
+                    this.listings.forEach(listing => {
+                        this._listings[listing.intent == 0 ? listing.getSKU() : listing.item.id] = listing;
+                    });
 
-                this._createdListingsCount = 0;
+                    this._createdListingsCount = 0;
 
-                // Go through create queue and find listings that need retrying
-                this.actions.create.forEach(formatted => {
-                    if (formatted.retry !== undefined) {
-                        // Look for a listing that has a matching sku / id
-                        const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
-                        if (match !== null && match.archived === false) {
-                            // Found match, remove the listing and unset retry property
-                            match.remove();
+                    // Go through create queue and find listings that need retrying
+                    this.actions.create.forEach(formatted => {
+                        if (formatted.retry !== undefined) {
+                            // Look for a listing that has a matching sku / id
+                            const match = this.findListing(formatted.intent === 0 ? formatted.sku : formatted.id);
+                            if (match !== null && match.archived === false) {
+                                // Found match, remove the listing and unset retry property
+                                match.remove();
+                            }
                         }
-                    }
-                });
+                    });
 
-                if (this.ready) {
-                    this.emit('listings', this.listings);
-                }
-
-                callback(null, body);
-            };
-
-            if (onShutdown) {
-                // Don't need to get archived listings on shutdown
-                return populate();
-            }
-
-            getAllArchivedListings(
-                0,
-                {
-                    'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
-                    Cookie: 'user-id=' + this.userID
-                },
-                this.token,
-                [],
-                (err, archivedListings) => {
-                    if (err) {
-                        return callback('Error getting archived listings', err);
+                    if (this.ready) {
+                        this.emit('listings', this.listings);
                     }
 
-                    this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
+                    callback(null, body);
+                };
 
+                if (onShutdown) {
+                    // Don't need to get archived listings on shutdown
                     return populate();
                 }
-            );
-        }).end();
+
+                getAllArchivedListings(
+                    0,
+                    {
+                        'User-Agent': this.userAgent ? this.userAgent : 'User Agent',
+                        Cookie: 'user-id=' + this.userID
+                    },
+                    this.token,
+                    [],
+                    (err, archivedListings) => {
+                        if (err) {
+                            return callback('Error getting archived listings', err);
+                        }
+
+                        this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
+
+                        return populate();
+                    }
+                );
+            })
+            .catch(err => {
+                if (err) {
+                    return callback('Error getting active listings', err);
+                }
+            });
     }
 
     /**
@@ -727,107 +743,107 @@ class ListingManager {
             return;
         }
 
-        const options = this.setRequestOptions(
-            'POST',
-            'https://api.backpack.tf/api/v2/classifieds/listings/batch',
-            batch
-        );
+        const options = this.setRequestOptions('POST', '/v2/classifieds/listings/batch', batch);
 
-        request(options, (err, response, body) => {
-            if (err) {
-                this.emit('createListingsError', {
-                    error: err?.name,
-                    message: err?.message,
-                    statusCode: err?.statusCode
-                });
-                return callback(err);
-            }
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            const waitForInventory = [];
-            const retryListings = [];
+                const waitForInventory = [];
+                const retryListings = [];
 
-            if (Array.isArray(body)) {
-                let created = 0;
-                let archived = 0;
-                let errors = [];
+                if (Array.isArray(body)) {
+                    let created = 0;
+                    let archived = 0;
+                    let errors = [];
 
-                body.forEach((element, index) => {
-                    if (element.result) {
-                        // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
-                        created++;
-                        this._createdListingsCount++;
+                    body.forEach((element, index) => {
+                        if (element.result) {
+                            // There are "archived":true,"status":"notEnoughCurrency", might be good to do something about it
+                            created++;
+                            this._createdListingsCount++;
 
-                        if (element.result.archived === true) {
-                            archived++;
-                        }
-                    } else if (element.error) {
-                        errors.push({ listing: batch[index], error: element.error });
+                            if (element.result.archived === true) {
+                                archived++;
+                            }
+                        } else if (element.error) {
+                            errors.push({ listing: batch[index], error: element.error });
 
-                        const identifier = batch[index].intent === 0 ? batch[index].sku : batch[index].id;
+                            const identifier = batch[index].intent === 0 ? batch[index].sku : batch[index].id;
 
-                        if (element.error.message === '' || element.error.message.includes('timestamp')) {
-                            waitForInventory.push(identifier);
-                        } else if (element.error.message.includes('as it already exists')) {
-                            // This error should be extremely rare
+                            if (element.error.message === '' || element.error.message.includes('timestamp')) {
+                                waitForInventory.push(identifier);
+                            } else if (element.error.message.includes('as it already exists')) {
+                                // This error should be extremely rare
 
-                            // Find listing matching the identifier in create queue
-                            const match = this.actions.create.find(formatted =>
-                                this._isSameByIdentifier(formatted, formatted.intent, identifier)
-                            );
+                                // Find listing matching the identifier in create queue
+                                const match = this.actions.create.find(formatted =>
+                                    this._isSameByIdentifier(formatted, formatted.intent, identifier)
+                                );
 
-                            if (match !== undefined) {
-                                // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
-                                retryListings.push(match.intent === 0 ? identifier : match.id);
+                                if (match !== undefined) {
+                                    // If we can't find the listing, then it was already removed / we can't identify the item / we can't properly list the item (FISK!!!)
+                                    retryListings.push(match.intent === 0 ? identifier : match.id);
+                                }
                             }
                         }
+
+                        // element.error:
+                        // error: {
+                        //    message:
+                        //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
+                        // }
+                    });
+
+                    this.emit('createListingsSuccessful', { created, archived, errors });
+                }
+
+                this.actions.create = this.actions.create.filter(formatted => {
+                    if (formatted.intent === 1 && waitForInventory.includes(formatted.id)) {
+                        if (formatted.attempt !== undefined) {
+                            // We have already tried to list before, remove it from the queue
+                            return false;
+                        }
+
+                        // We should wait for the inventory to update
+                        formatted.attempt = this._lastInventoryUpdate;
+                        return true;
                     }
 
-                    // element.error:
-                    // error: {
-                    //    message:
-                    //    'Cannot relist listing (Non-Craftable Killstreak Batsaber Kit) as it already exists.'
-                    // }
+                    if (
+                        formatted.retry !== true &&
+                        retryListings.includes(formatted.intent === 0 ? formatted.sku : formatted.id)
+                    ) {
+                        // A similar listing was already made, we will need to remove the old listing and then try and add this one again
+                        formatted.retry = true;
+                        return true;
+                    }
+
+                    const index = batch.findIndex(v => this._isSame(formatted, v));
+
+                    if (index !== -1) {
+                        // Listing was created, remove it from the batch and from the actions map
+                        delete this._actions.create[formatted.intent === 0 ? formatted.sku : formatted.id];
+                        batch.splice(index, 1);
+                    }
+
+                    return index === -1;
                 });
 
-                this.emit('createListingsSuccessful', { created, archived, errors });
-            }
+                this.emit('actions', this.actions);
 
-            this.actions.create = this.actions.create.filter(formatted => {
-                if (formatted.intent === 1 && waitForInventory.includes(formatted.id)) {
-                    if (formatted.attempt !== undefined) {
-                        // We have already tried to list before, remove it from the queue
-                        return false;
-                    }
-
-                    // We should wait for the inventory to update
-                    formatted.attempt = this._lastInventoryUpdate;
-                    return true;
+                callback(null, body);
+            })
+            .catch(err => {
+                if (err) {
+                    this.emit('createListingsError', {
+                        error: err?.name,
+                        message: err?.message,
+                        statusCode: err?.statusCode
+                    });
+                    return callback(err);
                 }
-
-                if (
-                    formatted.retry !== true &&
-                    retryListings.includes(formatted.intent === 0 ? formatted.sku : formatted.id)
-                ) {
-                    // A similar listing was already made, we will need to remove the old listing and then try and add this one again
-                    formatted.retry = true;
-                    return true;
-                }
-
-                const index = batch.findIndex(v => this._isSame(formatted, v));
-
-                if (index !== -1) {
-                    // Listing was created, remove it from the batch and from the actions map
-                    delete this._actions.create[formatted.intent === 0 ? formatted.sku : formatted.id];
-                    batch.splice(index, 1);
-                }
-
-                return index === -1;
             });
-
-            this.emit('actions', this.actions);
-
-            callback(null, body);
-        }).end();
     }
 
     /**
@@ -850,78 +866,80 @@ class ListingManager {
             return;
         }
 
-        const options = this.setRequestOptions(
-            'PATCH',
-            'https://api.backpack.tf/api/v2/classifieds/listings/batch',
-            update
-        );
+        const options = this.setRequestOptions('PATCH', '/v2/classifieds/listings/batch', update);
 
-        request(options, (err, response, body) => {
-            if (err) {
-                this.emit('updateListingsError', {
-                    error: err?.name,
-                    message: err?.message,
-                    statusCode: err?.statusCode
-                });
-                // Might need to do something if failed, like if item id not found.
-                return callback(err);
-            }
+        axios(options)
+            .then(response => {
+                const body = response.data;
 
-            this.emit('updateListingsSuccessful', { updated: body.updated?.length, errors: body.errors });
+                this.emit('updateListingsSuccessful', { updated: body.updated?.length, errors: body.errors });
 
-            if (Array.isArray(body.errors) && body.errors.length > 0) {
-                // got some error
-                body.errors.forEach(error => {
-                    // error<{ id: string, index: number, message: string }>
-                    if (error.message === 'Item not found') {
-                        // The listing might has been put into archived listing
-                        const listingId = error.id;
-                        const listingIndex = this.listings.findIndex(listing => listing.id === listingId);
+                if (Array.isArray(body.errors) && body.errors.length > 0) {
+                    // got some error
+                    body.errors.forEach(error => {
+                        // error<{ id: string, index: number, message: string }>
+                        if (error.message === 'Item not found') {
+                            // The listing might has been put into archived listing
+                            const listingId = error.id;
+                            const listingIndex = this.listings.findIndex(listing => listing.id === listingId);
 
-                        if (listingIndex >= 0) {
-                            const toRelist = this.listings[listingIndex];
-                            const reCreateListing = {
-                                time: toRelist.time || Math.floor(new Date().getTime() / 1000),
-                                intent: toRelist.intent,
-                                details: toRelist.details,
-                                currencies: toRelist.currencies
-                            };
-                            if (toRelist.intent === 0) {
-                                reCreateListing['sku'] = toRelist.getSKU();
-                            } else {
-                                reCreateListing['id'] = toRelist.item.id;
-                                reCreateListing['promoted'] = toRelist.promoted;
+                            if (listingIndex >= 0) {
+                                const toRelist = this.listings[listingIndex];
+                                const reCreateListing = {
+                                    time: toRelist.time || Math.floor(new Date().getTime() / 1000),
+                                    intent: toRelist.intent,
+                                    details: toRelist.details,
+                                    currencies: toRelist.currencies
+                                };
+                                if (toRelist.intent === 0) {
+                                    reCreateListing['sku'] = toRelist.getSKU();
+                                } else {
+                                    reCreateListing['id'] = toRelist.item.id;
+                                    reCreateListing['promoted'] = toRelist.promoted;
+                                }
+
+                                this.createListing(reCreateListing);
+
+                                delete this._listings[toRelist.intent === 0 ? toRelist.getSKU() : toRelist.item.id];
+                                this.listings.splice(listingIndex, 1);
                             }
-
-                            this.createListing(reCreateListing);
-
-                            delete this._listings[toRelist.intent === 0 ? toRelist.getSKU() : toRelist.item.id];
-                            this.listings.splice(listingIndex, 1);
                         }
-                    }
-                });
-            }
-
-            update.forEach(el => {
-                const index = this.listings.findIndex(listing => listing.id === el.id);
-                if (index >= 0) {
-                    for (const key in el.body) {
-                        if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
-                        if (!Object.prototype.hasOwnProperty.call(el.body, key)) return;
-                        this.listings[index][key] = el.body[key];
-                    }
-                    this._listings[
-                        this.listings[index].intent === 0 ? this.listings[index].getSKU() : this.listings[index].item.id
-                    ] = this.listings[index];
+                    });
                 }
 
-                this.actions.update.shift();
+                update.forEach(el => {
+                    const index = this.listings.findIndex(listing => listing.id === el.id);
+                    if (index >= 0) {
+                        for (const key in el.body) {
+                            if (!Object.prototype.hasOwnProperty.call(this.listings[index], key)) return;
+                            if (!Object.prototype.hasOwnProperty.call(el.body, key)) return;
+                            this.listings[index][key] = el.body[key];
+                        }
+                        this._listings[
+                            this.listings[index].intent === 0
+                                ? this.listings[index].getSKU()
+                                : this.listings[index].item.id
+                        ] = this.listings[index];
+                    }
+
+                    this.actions.update.shift();
+                });
+
+                this.emit('actions', this.actions);
+
+                return callback(null, body);
+            })
+            .catch(err => {
+                if (err) {
+                    this.emit('updateListingsError', {
+                        error: err?.name,
+                        message: err?.message,
+                        statusCode: err?.statusCode
+                    });
+                    // Might need to do something if failed, like if item id not found.
+                    return callback(err);
+                }
             });
-
-            this.emit('actions', this.actions);
-
-            return callback(null, body);
-        }).end();
     }
 
     /**
@@ -940,66 +958,68 @@ class ListingManager {
                 : this.actions.remove;
 
         //keep using old api, as it does not seem to have any item limit
-        const options = this.setRequestOptions('DELETE', 'https://api.backpack.tf/api/classifieds/delete/v1', {
+        const options = this.setRequestOptions('DELETE', '/classifieds/delete/v1', {
             listing_ids: remove
         });
 
-        request(options, (err, response, body) => {
-            if (err) {
+        axios(options)
+            .then(response => {
+                const body = response.data;
+
+                this.emit('deleteListingsSuccessful', body);
+
+                // Filter out listings that we just deleted
+                this.actions.remove = this.actions.remove.filter(id => remove.indexOf(id) === -1);
+
+                // Update cached listings
+                this.listings = this.listings.filter(listing => remove.indexOf(listing.id) === -1);
+
+                this.emit('actions', this.actions);
+
+                return callback(null, body);
+            })
+            .catch(err => {
                 this.emit('deleteListingsError', {
                     error: err?.name,
                     message: err?.message,
                     statusCode: err?.statusCode
                 });
                 return callback(err);
-            }
-
-            this.emit('deleteListingsSuccessful', body);
-
-            // Filter out listings that we just deleted
-            this.actions.remove = this.actions.remove.filter(id => remove.indexOf(id) === -1);
-
-            // Update cached listings
-            this.listings = this.listings.filter(listing => remove.indexOf(listing.id) === -1);
-
-            this.emit('actions', this.actions);
-
-            return callback(null, body);
-        }).end();
+            });
     }
 
     _deleteArchived(listingId) {
         // Delete a single archived listing - Immediate
-        const options = this.setRequestOptions(
-            'DELETE',
-            `https://api.backpack.tf/api/v2/classifieds/archive/${listingId}`
-        );
+        const options = this.setRequestOptions('DELETE', `/v2/classifieds/archive/${listingId}`);
 
-        request(options, (err, response, body) => {
-            if (err) {
-                if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
-                    this.deleteArchivedFailedAttempt[listingId] = 1;
-                } else {
-                    this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+        axios(options)
+            .then(response => {
+                const body = response.data;
+
+                // This return nothing (empty body)
+
+                this.emit('deleteArchivedListingSuccessful', true);
+
+                // Update cached listings
+                this.listings = this.listings.filter(listing => listing.id === listingId);
+            })
+            .catch(err => {
+                if (err) {
+                    if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
+                        this.deleteArchivedFailedAttempt[listingId] = 1;
+                    } else {
+                        this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+                    }
+
+                    this.checkDeleteArchivedFailedAttempt(listingId);
+
+                    this.emit('deleteArchivedListingError', {
+                        error: err?.name,
+                        message: err?.message,
+                        statusCode: err?.statusCode
+                    });
                 }
-
-                this.checkDeleteArchivedFailedAttempt(listingId);
-
-                this.emit('deleteArchivedListingError', {
-                    error: err?.name,
-                    message: err?.message,
-                    statusCode: err?.statusCode
-                });
-                return;
-            }
-
-            // This return nothing (empty body)
-
-            this.emit('deleteArchivedListingSuccessful', true);
-
-            // Update cached listings
-            this.listings = this.listings.filter(listing => listing.id === listingId);
-        }).end();
+            });
     }
 
     checkDeleteArchivedFailedAttempt(listingId) {
@@ -1022,45 +1042,51 @@ class ListingManager {
 
         //TODO: ratelimit - 60 sec
 
-        const options = this.setRequestOptions('DELETE', `https://api.backpack.tf/api/v2/classifieds/listings`);
+        const options = this.setRequestOptions('DELETE', `/v2/classifieds/listings`);
 
         if ([0, 1].includes(intent)) {
             options.body['intent'] = intent;
         }
 
-        request(options, (err1, response1, body1) => {
-            if (err1) {
-                this.emit('massDeleteListingsError', {
-                    error: err1?.name,
-                    message: err1?.message,
-                    statusCode: err1?.statusCode
-                });
-                return callback(err1);
-            }
+        axios(options)
+            .then(response => {
+                const body1 = response.data;
 
-            this.emit('massDeleteListingsSuccessful', body1);
+                this.emit('massDeleteListingsSuccessful', body1);
 
-            const options2 = this.setRequestOptions('DELETE', `https://api.backpack.tf/api/v2/classifieds/archive`);
+                const options2 = this.setRequestOptions('DELETE', `/v2/classifieds/archive`);
 
-            if ([0, 1].includes(intent)) {
-                options2.body['intent'] = intent;
-            }
-
-            request(options2, (err2, response2, body2) => {
-                if (err2) {
-                    this.emit('massDeleteArchiveError', {
-                        error: err2?.name,
-                        message: err2?.message,
-                        statusCode: err2?.statusCode
-                    });
-                    return callback(err2);
+                if ([0, 1].includes(intent)) {
+                    options2.body['intent'] = intent;
                 }
 
-                this.emit('massDeleteArchiveSuccessful', body2);
+                axios(options2)
+                    .then(response2 => {
+                        const body2 = response2.data;
 
-                return callback(null, { listings: body1, archive: body2 });
-            }).end();
-        }).end();
+                        this.emit('massDeleteArchiveSuccessful', body2);
+
+                        return callback(null, { listings: body1, archive: body2 });
+                    })
+                    .catch(err => {
+                        if (err) {
+                            this.emit('massDeleteArchiveError', {
+                                error: err?.name,
+                                message: err?.message,
+                                statusCode: err?.statusCode
+                            });
+                            return callback(err);
+                        }
+                    });
+            })
+            .catch(err => {
+                this.emit('massDeleteListingsError', {
+                    error: err?.name,
+                    message: err?.message,
+                    statusCode: err?.statusCode
+                });
+                return callback(err);
+            });
     }
 
     /**
@@ -1437,6 +1463,7 @@ function noop() {}
 function isObject(val) {
     return val != null && typeof val === 'object' && Array.isArray(val) === false;
 }
+
 /**
  * Recursive function that will get all archived listings
  * @param {Number} skip
@@ -1450,37 +1477,35 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
         callback = archivedListings;
     }
 
-    const input = {
-        token,
-        skip,
-        limit: 100
-    };
-
     const options = {
         method: 'GET',
         url: 'https://api.backpack.tf/api/v2/classifieds/archive',
         headers,
-        qs: input,
-        json: true,
-        gzip: true
+        params: {
+            token: this.token,
+            skip
+        }
     };
 
     setTimeout(() => {
-        request(options, (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
+        axios(options)
+            .then(response => {
+                const body = response.data;
+                archivedListings = (archivedListings || []).concat(body.results.filter(raw => raw.appid == 440));
+                const total = body.cursor.total;
+                const diff = total - body.cursor.skip;
 
-            archivedListings = (archivedListings || []).concat(body.results.filter(raw => raw.appid == 440));
-            const total = body.cursor.total;
-            const diff = total - body.cursor.skip;
-
-            if (diff > 0) {
-                skip = skip + 100;
-                getAllArchivedListings(skip, headers, token, archivedListings, callback);
-            } else {
-                callback(null, archivedListings);
-            }
-        }).end();
+                if (diff > 0) {
+                    skip = skip + 100;
+                    getAllArchivedListings(skip, headers, token, archivedListings, callback);
+                } else {
+                    callback(null, archivedListings);
+                }
+            })
+            .catch(err => {
+                if (err) {
+                    return callback(err);
+                }
+            });
     }, 1 * 1000);
 }
