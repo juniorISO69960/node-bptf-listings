@@ -1089,6 +1089,10 @@ class ListingManager {
                 delete listing.promoted;
             }
             // Keep sku for later
+        } else {
+            if (listing.id === undefined) {
+                return null;
+            }
         }
 
         if (listing.offers === undefined) {
