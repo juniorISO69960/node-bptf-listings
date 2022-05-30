@@ -994,30 +994,46 @@ class ListingManager {
 
         axios(options)
             .then(response => {
-                const body = response.data;
-
                 // This return nothing (empty body)
 
-                this.emit('deleteArchivedListingSuccessful', true);
+                if (response?.status === 200) {
+                    this.emit('deleteArchivedListingSuccessful', true);
 
-                // Update cached listings
-                this.listings = this.listings.filter(listing => listing.id === listingId);
+                    // Update cached listings
+                    this.listings = this.listings.filter(listing => listing.id === listingId);
+                }
             })
             .catch(err => {
-                if (err) {
-                    if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
-                        this.deleteArchivedFailedAttempt[listingId] = 1;
+                if (err.response?.status === 200) {
+                    // Got error, but status is 200 (OK), consider success.
+                    this.emit('deleteArchivedListingSuccessful', true);
+
+                    // Update cached listings
+                    this.listings = this.listings.filter(listing => listing.id === listingId);
+                } else {
+                    if (err.response?.status !== 404) {
+                        // We only retry if status is not 404 (Not Found)
+                        if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
+                            this.deleteArchivedFailedAttempt[listingId] = 1;
+                        } else {
+                            this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+                        }
+
+                        this.checkDeleteArchivedFailedAttempt(listingId);
+
+                        this.emit('deleteArchivedListingError', {
+                            error: err?.name,
+                            message: err?.message,
+                            statusCode: err?.response?.status
+                        });
                     } else {
-                        this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+                        if (this.deleteArchivedFailedAttempt[listingId] !== undefined) {
+                            delete this.deleteArchivedFailedAttempt[listingId];
+                        }
+
+                        // Listing not found, update cached listings
+                        this.listings = this.listings.filter(listing => listing.id === listingId);
                     }
-
-                    this.checkDeleteArchivedFailedAttempt(listingId);
-
-                    this.emit('deleteArchivedListingError', {
-                        error: err?.name,
-                        message: err?.message,
-                        statusCode: err?.statusCode
-                    });
                 }
             });
     }
