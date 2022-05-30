@@ -837,9 +837,8 @@ class ListingManager {
             .catch(err => {
                 if (err) {
                     this.emit('createListingsError', {
-                        error: err?.name,
                         message: err?.message,
-                        statusCode: err?.statusCode
+                        statusCode: err?.response?.status
                     });
                     return callback(err);
                 }
@@ -932,9 +931,8 @@ class ListingManager {
             .catch(err => {
                 if (err) {
                     this.emit('updateListingsError', {
-                        error: err?.name,
                         message: err?.message,
-                        statusCode: err?.statusCode
+                        statusCode: err?.response?.status
                     });
                     // Might need to do something if failed, like if item id not found.
                     return callback(err);
@@ -980,9 +978,8 @@ class ListingManager {
             })
             .catch(err => {
                 this.emit('deleteListingsError', {
-                    error: err?.name,
                     message: err?.message,
-                    statusCode: err?.statusCode
+                    statusCode: err?.response?.status
                 });
                 return callback(err);
             });
@@ -1022,7 +1019,6 @@ class ListingManager {
                         this.checkDeleteArchivedFailedAttempt(listingId);
 
                         this.emit('deleteArchivedListingError', {
-                            error: err?.name,
                             message: err?.message,
                             statusCode: err?.response?.status
                         });
@@ -1087,9 +1083,8 @@ class ListingManager {
                     .catch(err => {
                         if (err) {
                             this.emit('massDeleteArchiveError', {
-                                error: err?.name,
                                 message: err?.message,
-                                statusCode: err?.statusCode
+                                statusCode: err?.response?.status
                             });
                             return callback(err);
                         }
@@ -1097,9 +1092,8 @@ class ListingManager {
             })
             .catch(err => {
                 this.emit('massDeleteListingsError', {
-                    error: err?.name,
                     message: err?.message,
-                    statusCode: err?.statusCode
+                    statusCode: err?.response?.status
                 });
                 return callback(err);
             });
