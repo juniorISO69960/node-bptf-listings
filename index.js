@@ -1504,7 +1504,6 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
             })
             .catch(err => {
                 if (err) {
-                    console.error(err);
                     return callback(err);
                 }
             });
