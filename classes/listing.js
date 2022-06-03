@@ -195,7 +195,7 @@ class Listing {
             }
 
             if (this.item.craftNumber) {
-                if (this.item.craftNumber > 0 && this.item.craftNumber <= 100) {
+                if (this.item.craftNumber >= 1 && this.item.craftNumber <= 100) {
                     attributes.craftnumber = this.item.craftNumber;
                 }
             }
@@ -264,11 +264,11 @@ class Listing {
                 } else if (attribute.defindex == 187) {
                     // Crates
                     attributes.crateseries = attribute.float_value;
-                } else if (attribute.defindex == 187) {
+                } else if (attribute.defindex == 229 && attribute.value !== null) {
                     // Craft Number
-                    if (attribute.float_value > 0 && attribute.float_value <= 100) {
+                    if (attribute.value >= 1 && attribute.value <= 100) {
                         // Only if in between 1 - 100
-                        attributes.crateseries = attribute.float_value;
+                        attributes.craftnumber = attribute.value;
                     }
                 } else if (attribute.defindex == 2012) {
                     // Target - Unusualifier/Strangifier/Killstreak Kit
