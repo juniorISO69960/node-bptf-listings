@@ -1523,5 +1523,5 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
 
                 return callback(err);
             });
-    }, 1 * 1000);
+    }, 2000);
 }
