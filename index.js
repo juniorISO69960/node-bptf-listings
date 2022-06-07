@@ -1513,9 +1513,15 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
                 }
             })
             .catch(err => {
-                if (err) {
-                    return callback(err);
+                if (err.response?.status === 429) {
+                    // Too many request error
+                    setTimeout(() => {
+                        getAllArchivedListings(skip, headers, token, archivedListings, callback);
+                    }, 10000); // retry again after 10 seconds
+                    return;
                 }
+
+                return callback(err);
             });
     }, 1 * 1000);
 }
