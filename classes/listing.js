@@ -193,7 +193,7 @@ class Listing {
             }
 
             if (this.item.craftNumber) {
-                if (this.item.craftNumber > 0 && this.item.craftNumber <= 100) {
+                if (this.item.craftNumber >= 1 && this.item.craftNumber <= 100) {
                     attributes.craftnumber = this.item.craftNumber;
                 }
             }
@@ -204,14 +204,18 @@ class Listing {
 
             if (this.item.recipe) {
                 if (this.item.recipe.targetItem) {
-                    attributes.target = this.item.recipe.targetItem.id;
+                    attributes.target = this.item.recipe.targetItem.defindex;
                 }
 
                 if (this.item.recipe.outputItem) {
-                    attributes.output = this.item.recipe.outputItem.id;
+                    attributes.output = this.item.recipe.outputItem.defindex;
+                    const summary = this.item.recipe.outputItem.summary;
+                    if (summary.includes('Killstreak Kit')) {
+                        attributes.killstreak = summary.includes('Specialized Killstreak Kit') ? 2 : 3;
+                    }
 
                     if (this.item.recipe.outputItem.quality) {
-                        attributes.outputQuality = this.item.recipe.outputItem.quality;
+                        attributes.outputQuality = this.item.recipe.outputItem.quality.id;
                     }
                 }
             }
@@ -262,11 +266,11 @@ class Listing {
                 } else if (attribute.defindex == 187) {
                     // Crates
                     attributes.crateseries = attribute.float_value;
-                } else if (attribute.defindex == 187) {
+                } else if (attribute.defindex == 229 && attribute.value !== null) {
                     // Craft Number
-                    if (attribute.float_value > 0 && attribute.float_value <= 100) {
+                    if (attribute.value >= 1 && attribute.value <= 100) {
                         // Only if in between 1 - 100
-                        attributes.crateseries = attribute.float_value;
+                        attributes.craftnumber = attribute.value;
                     }
                 } else if (attribute.defindex == 2012) {
                     // Target - Unusualifier/Strangifier/Killstreak Kit
@@ -277,34 +281,40 @@ class Listing {
                     if (!paintDefindexes.includes(this.item.defindex)) {
                         attributes.paint = attribute.float_value;
                     }
-                } else if (
-                    [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007].includes(attribute.defindex) &&
-                    attribute.is_output == true
-                ) {
-                    if (attribute.attributes === undefined) {
-                        attributes.outputQuality = parseInt(attribute.quality);
+                } else if ([2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007].includes(attribute.defindex)) {
+                    if (attribute.is_output == true) {
+                        if (attribute.attributes === undefined) {
+                            attributes.outputQuality = parseInt(attribute.quality);
 
-                        if (attributes.outputQuality === 14) {
-                            // Chemistry Set Collector's
-                            attributes.output = parseInt(attribute.itemdef);
+                            if (attributes.outputQuality === 14) {
+                                // Chemistry Set Collector's
+                                attributes.output = parseInt(attribute.itemdef);
+                            } else {
+                                // Chemistry Set Strangifier
+                                attributes.target = parseInt(attribute.itemdef);
+                            }
                         } else {
-                            // Chemistry Set Strangifier
-                            attributes.target = parseInt(attribute.itemdef);
+                            // Killstreak Fabricator Kit: getting output, outputQuality and target
+
+                            attributes.output = attribute.itemdef;
+                            attributes.outputQuality = attribute.quality;
+
+                            const attributes2 = attribute.attributes;
+                            const attributes2Count = attributes2.length;
+
+                            for (let i = 0; i < attributes2Count; i++) {
+                                if (attributes2[i].defindex == 2012) {
+                                    attributes.target = attributes2[i].float_value;
+                                }
+                            }
                         }
-                    } else {
-                        // Killstreak Fabricator Kit: getting output, outputQuality and target
-
-                        attributes.output = attribute.itemdef;
-                        attributes.outputQuality = attribute.quality;
-
+                    } else if (attribute.match_all_attribs === true) {
                         const attributes2 = attribute.attributes;
                         const attributes2Count = attributes2.length;
 
                         for (let i = 0; i < attributes2Count; i++) {
-                            const attributes2Element = attributes2[i];
-                            if (attributes2Element.defindex == 2012) {
-                                const value = attributes2Element.float_value;
-                                attributes.target = typeof value === 'string' ? parseInt(value) : value;
+                            if (attributes2[i].defindex == 2025) {
+                                attributes.killstreak = attributes2[i].float_value + 1;
                             }
                         }
                     }

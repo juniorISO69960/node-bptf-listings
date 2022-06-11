@@ -782,9 +782,8 @@ class ListingManager {
             .catch(err => {
                 if (err) {
                     this.emit('createListingsError', {
-                        error: err?.name,
                         message: err?.message,
-                        statusCode: err?.statusCode
+                        statusCode: err?.response?.status
                     });
                     return callback(err);
                 }
@@ -877,9 +876,8 @@ class ListingManager {
             .catch(err => {
                 if (err) {
                     this.emit('updateListingsError', {
-                        error: err?.name,
                         message: err?.message,
-                        statusCode: err?.statusCode
+                        statusCode: err?.response?.status
                     });
                     // Might need to do something if failed, like if item id not found.
                     return callback(err);
@@ -925,9 +923,8 @@ class ListingManager {
             })
             .catch(err => {
                 this.emit('deleteListingsError', {
-                    error: err?.name,
                     message: err?.message,
-                    statusCode: err?.statusCode
+                    statusCode: err?.response?.status
                 });
                 return callback(err);
             });
@@ -939,30 +936,45 @@ class ListingManager {
 
         axios(options)
             .then(response => {
-                const body = response.data;
-
                 // This return nothing (empty body)
 
-                this.emit('deleteArchivedListingSuccessful', true);
+                if (response?.status === 200) {
+                    this.emit('deleteArchivedListingSuccessful', true);
 
-                // Update cached listings
-                this.listings = this.listings.filter(listing => listing.id === listingId);
+                    // Update cached listings
+                    this.listings = this.listings.filter(listing => listing.id === listingId);
+                }
             })
             .catch(err => {
-                if (err) {
-                    if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
-                        this.deleteArchivedFailedAttempt[listingId] = 1;
+                if (err.response?.status === 200) {
+                    // Got error, but status is 200 (OK), consider success.
+                    this.emit('deleteArchivedListingSuccessful', true);
+
+                    // Update cached listings
+                    this.listings = this.listings.filter(listing => listing.id === listingId);
+                } else {
+                    if (err.response?.status !== 404) {
+                        // We only retry if status is not 404 (Not Found)
+                        if (this.deleteArchivedFailedAttempt[listingId] === undefined) {
+                            this.deleteArchivedFailedAttempt[listingId] = 1;
+                        } else {
+                            this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+                        }
+
+                        this.checkDeleteArchivedFailedAttempt(listingId);
+
+                        this.emit('deleteArchivedListingError', {
+                            message: err?.message,
+                            statusCode: err?.response?.status
+                        });
                     } else {
-                        this.deleteArchivedFailedAttempt[listingId] = this.deleteArchivedFailedAttempt[listingId]++;
+                        if (this.deleteArchivedFailedAttempt[listingId] !== undefined) {
+                            delete this.deleteArchivedFailedAttempt[listingId];
+                        }
+
+                        // Listing not found, update cached listings
+                        this.listings = this.listings.filter(listing => listing.id === listingId);
                     }
-
-                    this.checkDeleteArchivedFailedAttempt(listingId);
-
-                    this.emit('deleteArchivedListingError', {
-                        error: err?.name,
-                        message: err?.message,
-                        statusCode: err?.statusCode
-                    });
                 }
             });
     }
@@ -1016,9 +1028,8 @@ class ListingManager {
                     .catch(err => {
                         if (err) {
                             this.emit('massDeleteArchiveError', {
-                                error: err?.name,
                                 message: err?.message,
-                                statusCode: err?.statusCode
+                                statusCode: err?.response?.status
                             });
                             return callback(err);
                         }
@@ -1026,9 +1037,8 @@ class ListingManager {
             })
             .catch(err => {
                 this.emit('massDeleteListingsError', {
-                    error: err?.name,
                     message: err?.message,
-                    statusCode: err?.statusCode
+                    statusCode: err?.response?.status
                 });
                 return callback(err);
             });
@@ -1448,9 +1458,15 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
                 }
             })
             .catch(err => {
-                if (err) {
-                    return callback(err);
+                if (err.response?.status === 429) {
+                    // Too many request error
+                    setTimeout(() => {
+                        getAllArchivedListings(skip, headers, token, archivedListings, callback);
+                    }, 10000); // retry again after 10 seconds
+                    return;
                 }
+
+                return callback(err);
             });
-    }, 1 * 1000);
+    }, 2000);
 }

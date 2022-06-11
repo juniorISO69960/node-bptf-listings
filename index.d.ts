@@ -156,9 +156,8 @@ declare namespace ListingManager {
     }
 
     interface CustomError {
-        error: string;
         message: string;
-        statusCode: string | number;
+        statusCode: number;
     }
 
     export class Listing {
