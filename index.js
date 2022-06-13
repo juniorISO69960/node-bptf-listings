@@ -471,6 +471,15 @@ class ListingManager {
             throw new Error('Module has not been successfully initialized');
         }
 
+        if (this.actions.create.length > 0) {
+            // remove from create queue
+            const sku = listing.getSKU();
+            const id = listing.id.replace('440_', ''); // we don't use for buy order
+            this.actions.create = this.actions.create.filter(formatted => {
+                return listing.intent === 0 ? sku !== formatted.sku : id !== formatted.id;
+            });
+        }
+
         if (listing.archived) {
             this._deleteArchived(listing.id);
         }
