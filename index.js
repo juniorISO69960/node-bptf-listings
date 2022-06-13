@@ -473,9 +473,12 @@ class ListingManager {
 
         if (listing.archived) {
             this._deleteArchived(listing.id);
-        } else {
-            this._action('remove', listing.id);
         }
+
+        // We will also call this no matter what because sometimes the listings that were archived
+        // earlier become active when there's enough pure, but in memory, it's still "archived",
+        // so it is not being removed.
+        this._action('remove', listing.id);
     }
 
     /**
