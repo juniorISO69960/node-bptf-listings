@@ -535,7 +535,7 @@ class ListingManager {
         if (doneSomething) {
             this.emit('actions', this.actions);
 
-            this._startTimeout();
+            this._processActions();
         }
     }
 
@@ -633,14 +633,6 @@ class ListingManager {
     }
 
     /**
-     * Starts timeout used to process actions
-     */
-    _startTimeout() {
-        clearTimeout(this._timeout);
-        this._timeout = setTimeout(ListingManager.prototype._processActions.bind(this), this.waitTime);
-    }
-
-    /**
      * Renew user-agent
      * @param {Function} callback
      */
@@ -690,40 +682,41 @@ class ListingManager {
 
         this._processingActions = true;
 
-        async.series(
-            {
-                update: callback => {
-                    this._update(callback);
+        setTimeout(() => {
+            async.series(
+                {
+                    update: callback => {
+                        this._update(callback);
+                    },
+                    delete: callback => {
+                        this._delete(callback);
+                    },
+                    create: callback => {
+                        this._create(callback);
+                    }
                 },
-                delete: callback => {
-                    this._delete(callback);
-                },
-                create: callback => {
-                    this._create(callback);
-                }
-            },
-            (err, result) => {
-                // TODO: Only get listings if we created or deleted listings
+                (err, result) => {
+                    // TODO: Only get listings if we created or deleted listings
 
-                if (
-                    this.actions.remove.length !== 0 ||
-                    this.actions.update.length !== 0 ||
-                    this._listingsWaitingForRetry() - this.actions.create.length !== 0
-                ) {
-                    this._processingActions = false;
-                    // There are still things to do
-                    this._startTimeout();
-                    callback(null);
-                } else {
-                    // Queues are empty, get listings
-                    this.getListings(false, () => {
+                    if (
+                        this.actions.remove.length !== 0 ||
+                        this.actions.update.length !== 0 ||
+                        this._listingsWaitingForRetry() - this.actions.create.length !== 0
+                    ) {
                         this._processingActions = false;
-                        this._startTimeout();
+                        // There are still things to do
+                        this._processActions();
                         callback(null);
-                    });
+                    } else {
+                        // Queues are empty, get listings
+                        this.getListings(false, () => {
+                            this._processingActions = false;
+                            callback(null);
+                        });
+                    }
                 }
-            }
-        );
+            );
+        }, this.waitTime);
     }
 
     /**
