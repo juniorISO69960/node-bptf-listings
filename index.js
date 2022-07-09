@@ -736,14 +736,6 @@ class ListingManager {
             return;
         }
 
-        if (this.listings.length + this._createdListingsCount >= this.cap) {
-            // Reached listing cap, clear create queue
-            this.actions.create = [];
-            this._actions.create = {};
-            callback(null, null);
-            return;
-        }
-
         // TODO: Don't send sku and attempt time to backpack.tf
 
         const batch = this.actions.create
