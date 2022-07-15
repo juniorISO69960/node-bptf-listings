@@ -2,6 +2,7 @@ const async = require('async');
 const SteamID = require('steamid');
 const axios = require('axios').default;
 const SKU = require('@tf2autobot/tf2-sku');
+const filterAxiosErr = require('@tf2autobot/filter-axios-error').default;
 
 const inherits = require('util').inherits;
 const EventEmitter = require('events').EventEmitter;
@@ -338,7 +339,7 @@ class ListingManager {
                     [],
                     (err, archivedListings) => {
                         if (err) {
-                            return callback('Error getting archived listings', err);
+                            return callback('Error getting archived listings', filterAxiosErr(err));
                         }
 
                         this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
@@ -349,7 +350,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
-                    return callback('Error getting active listings', err);
+                    return callback('Error getting active listings', filterAxiosErr(err));
                 }
             });
     }
@@ -833,10 +834,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
-                    this.emit('createListingsError', {
-                        message: err?.message,
-                        statusCode: err?.response?.status
-                    });
+                    this.emit('createListingsError', filterAxiosErr(err));
                     return callback(err);
                 }
             });
@@ -927,10 +925,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
-                    this.emit('updateListingsError', {
-                        message: err?.message,
-                        statusCode: err?.response?.status
-                    });
+                    this.emit('updateListingsError', filterAxiosErr(err));
                     // Might need to do something if failed, like if item id not found.
                     return callback(err);
                 }
@@ -974,10 +969,7 @@ class ListingManager {
                 return callback(null, body);
             })
             .catch(err => {
-                this.emit('deleteListingsError', {
-                    message: err?.message,
-                    statusCode: err?.response?.status
-                });
+                this.emit('deleteListingsError', filterAxiosErr(err));
                 return callback(err);
             });
     }
@@ -1015,10 +1007,7 @@ class ListingManager {
 
                         this.checkDeleteArchivedFailedAttempt(listingId);
 
-                        this.emit('deleteArchivedListingError', {
-                            message: err?.message,
-                            statusCode: err?.response?.status
-                        });
+                        this.emit('deleteArchivedListingError', filterAxiosErr(err));
                     } else {
                         if (this.deleteArchivedFailedAttempt[listingId] !== undefined) {
                             delete this.deleteArchivedFailedAttempt[listingId];
@@ -1079,19 +1068,13 @@ class ListingManager {
                     })
                     .catch(err => {
                         if (err) {
-                            this.emit('massDeleteArchiveError', {
-                                message: err?.message,
-                                statusCode: err?.response?.status
-                            });
+                            this.emit('massDeleteArchiveError', filterAxiosErr(err));
                             return callback(err);
                         }
                     });
             })
             .catch(err => {
-                this.emit('massDeleteListingsError', {
-                    message: err?.message,
-                    statusCode: err?.response?.status
-                });
+                this.emit('massDeleteListingsError', filterAxiosErr(err));
                 return callback(err);
             });
     }
@@ -1514,7 +1497,7 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
                     // Too many request error
                     setTimeout(() => {
                         getAllArchivedListings(skip, headers, token, archivedListings, callback);
-                    }, 10000); // retry again after 10 seconds
+                    }, err.response.data?.retry_after || 10000); // retry again after 10 seconds
                     return;
                 }
 
