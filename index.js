@@ -51,6 +51,7 @@ class ListingManager {
             update: []
         };
 
+        this.isGettingListings = false;
         this.deleteArchivedFailedAttempt = {};
 
         this.schema = options.schema || null;
@@ -288,6 +289,8 @@ class ListingManager {
             automatic: 'all'
         });
 
+        this.isGettingListings = true;
+
         axios(options)
             .then(response => {
                 const body = response.data;
@@ -321,6 +324,7 @@ class ListingManager {
                         this.emit('listings', this.listings);
                     }
 
+                    this.isGettingListings = false;
                     callback(null, body);
                 };
 
@@ -339,6 +343,7 @@ class ListingManager {
                     [],
                     (err, archivedListings) => {
                         if (err) {
+                            this.isGettingListings = false;
                             return callback('Error getting archived listings', filterAxiosErr(err));
                         }
 
@@ -350,6 +355,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
+                    this.isGettingListings = false;
                     return callback('Error getting active listings', filterAxiosErr(err));
                 }
             });
@@ -676,7 +682,7 @@ class ListingManager {
             callback = noop;
         }
 
-        if (this._processingActions === true) {
+        if (this._processingActions || this.isGettingListings) {
             callback(null);
             return;
         }
