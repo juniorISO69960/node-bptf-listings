@@ -2,7 +2,7 @@ const async = require('async');
 const SteamID = require('steamid');
 const axios = require('axios').default;
 const SKU = require('@tf2autobot/tf2-sku');
-const filterAxiosErr = require('@tf2autobot/filter-axios-error').default;
+const filterAxiosErr = require('@tf2autobot/filter-axios-error');
 
 const inherits = require('util').inherits;
 const EventEmitter = require('events').EventEmitter;
