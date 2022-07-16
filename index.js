@@ -2,7 +2,7 @@ const async = require('async');
 const SteamID = require('steamid');
 const axios = require('axios').default;
 const SKU = require('@tf2autobot/tf2-sku');
-const filterAxiosErr = require('@tf2autobot/filter-axios-error');
+const filterAxiosError = require('@tf2autobot/filter-axios-error').default;
 
 const inherits = require('util').inherits;
 const EventEmitter = require('events').EventEmitter;
@@ -840,7 +840,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
-                    this.emit('createListingsError', filterAxiosErr(err));
+                    this.emit('createListingsError', filterAxiosError(err));
                     return callback(err);
                 }
             });
@@ -931,7 +931,7 @@ class ListingManager {
             })
             .catch(err => {
                 if (err) {
-                    this.emit('updateListingsError', filterAxiosErr(err));
+                    this.emit('updateListingsError', filterAxiosError(err));
                     // Might need to do something if failed, like if item id not found.
                     return callback(err);
                 }
@@ -975,7 +975,7 @@ class ListingManager {
                 return callback(null, body);
             })
             .catch(err => {
-                this.emit('deleteListingsError', filterAxiosErr(err));
+                this.emit('deleteListingsError', filterAxiosError(err));
                 return callback(err);
             });
     }
@@ -1013,7 +1013,7 @@ class ListingManager {
 
                         this.checkDeleteArchivedFailedAttempt(listingId);
 
-                        this.emit('deleteArchivedListingError', filterAxiosErr(err));
+                        this.emit('deleteArchivedListingError', filterAxiosError(err));
                     } else {
                         if (this.deleteArchivedFailedAttempt[listingId] !== undefined) {
                             delete this.deleteArchivedFailedAttempt[listingId];
@@ -1074,13 +1074,13 @@ class ListingManager {
                     })
                     .catch(err => {
                         if (err) {
-                            this.emit('massDeleteArchiveError', filterAxiosErr(err));
+                            this.emit('massDeleteArchiveError', filterAxiosError(err));
                             return callback(err);
                         }
                     });
             })
             .catch(err => {
-                this.emit('massDeleteListingsError', filterAxiosErr(err));
+                this.emit('massDeleteListingsError', filterAxiosError(err));
                 return callback(err);
             });
     }
