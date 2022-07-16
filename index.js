@@ -344,7 +344,7 @@ class ListingManager {
                     (err, archivedListings) => {
                         if (err) {
                             this.isGettingListings = false;
-                            return callback('Error getting archived listings', filterAxiosErr(err));
+                            return callback('Error getting archived listings', err);
                         }
 
                         this.listings = this.listings.concat(archivedListings.map(raw => new Listing(raw, this, true)));
@@ -356,7 +356,7 @@ class ListingManager {
             .catch(err => {
                 if (err) {
                     this.isGettingListings = false;
-                    return callback('Error getting active listings', filterAxiosErr(err));
+                    return callback('Error getting active listings', err);
                 }
             });
     }
