@@ -116,30 +116,24 @@ class ListingManager {
                 return callback(err);
             }
 
-            this._updateListings(err => {
+            this.getBatchOpLimit(err => {
                 if (err) {
                     return callback(err);
                 }
 
-                this.getBatchOpLimit(err => {
-                    if (err) {
-                        return callback(err);
-                    }
+                this._updateInventory(() => {
+                    this._startTimers();
 
-                    this._updateInventory(() => {
-                        this._startTimers();
+                    this.ready = true;
+                    this.emit('ready');
 
-                        this.ready = true;
-                        this.emit('ready');
+                    // Emit listings after initializing
+                    this.emit('listings', this.listings);
 
-                        // Emit listings after initializing
-                        this.emit('listings', this.listings);
+                    // Start processing actions if there are any
+                    this._processActions();
 
-                        // Start processing actions if there are any
-                        this._processActions();
-
-                        return callback(null);
-                    });
+                    return callback(null);
                 });
             });
         });
