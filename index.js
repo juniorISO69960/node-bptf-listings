@@ -699,6 +699,19 @@ class ListingManager {
                 (err, result) => {
                     // TODO: Only get listings if we created or deleted listings
 
+                    if (err.response?.status === 429) {
+                        // Too many request error
+                        const s = err.response.data?.message.match(/in \d+ second/);
+                        const sleepTime = s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) * 1000 : null;
+                        this.isRateLimited = true;
+
+                        setTimeout(() => {
+                            this._processingActions = false;
+                            this._processActions();
+                        }, err.response.data?.retry_after || sleepTime || 10000); // retry again after 10 seconds
+                        return callback(null);
+                    }
+
                     if (
                         this.actions.remove.length !== 0 ||
                         this.actions.update.length !== 0 ||
@@ -717,7 +730,11 @@ class ListingManager {
                     }
                 }
             );
-        }, this.waitTime);
+        }, this.isRateLimited ? 10 : this.waitTime);
+
+        if (this.isRateLimit) {
+            this.isRateLimit = false;
+        }
     }
 
     /**
