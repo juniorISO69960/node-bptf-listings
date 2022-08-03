@@ -703,12 +703,12 @@ class ListingManager {
                         // Too many request error
                         const s = err.response.data?.message.match(/in \d+ second/);
                         const sleepTime = s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) * 1000 : null;
+                        this.sleepRateLimited = err.response.data?.retry_after || sleepTime || 10000;
                         this.isRateLimited = true;
 
-                        setTimeout(() => {
-                            this._processingActions = false;
-                            this._processActions();
-                        }, err.response.data?.retry_after || sleepTime || 10000); // retry again after 10 seconds
+                        this._processingActions = false;
+                        this._processActions();
+
                         return callback(null);
                     }
 
@@ -730,10 +730,11 @@ class ListingManager {
                     }
                 }
             );
-        }, this.isRateLimited ? 10 : this.waitTime);
+        }, this.isRateLimited ? this.sleepRateLimited : this.waitTime);
 
         if (this.isRateLimited) {
             this.isRateLimited = false;
+            this.sleepRateLimited = null;
         }
     }
 
