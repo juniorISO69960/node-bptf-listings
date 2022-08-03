@@ -701,7 +701,7 @@ class ListingManager {
 
                     if (err?.response?.status === 429) {
                         // Too many request error
-                        const s = err.response.data?.message.match(/in \d+ second/);
+                        const s = err.response.data?.message?.match(/in \d+ second/);
                         const sleepTime = s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) * 1000 : null;
                         this.sleepRateLimited = err.response.data?.retry_after || sleepTime || 10000;
                         this.isRateLimited = true;
