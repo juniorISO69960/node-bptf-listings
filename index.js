@@ -732,8 +732,8 @@ class ListingManager {
             );
         }, this.isRateLimited ? 10 : this.waitTime);
 
-        if (this.isRateLimit) {
-            this.isRateLimit = false;
+        if (this.isRateLimited) {
+            this.isRateLimited = false;
         }
     }
 
