@@ -730,7 +730,7 @@ class ListingManager {
                     }
                 }
             );
-        }, this.isRateLimited ? this.sleepRateLimited : this.waitTime);
+        }, this.isRateLimited ? this.sleepRateLimited + this.waitTime : this.waitTime);
 
         if (this.isRateLimited) {
             this.isRateLimited = false;
