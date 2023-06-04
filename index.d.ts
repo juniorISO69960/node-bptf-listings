@@ -69,7 +69,7 @@ declare class ListingManager extends EventEmitter {
 
     removeListing(listingId: string): void;
 
-    removeListings(listingIds: string[]): void;
+    removeListings(...listings: (string|ListingManager.Listing)[]): void;
 
     deleteAllListings(callback: (err: any, body?: any) => any): void;
 
