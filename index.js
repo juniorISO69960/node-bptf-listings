@@ -1,6 +1,6 @@
 const async = require('async');
 const SteamID = require('steamid');
-const axios = require('axios').default;
+const _axios = require('axios').default;
 const SKU = require('@tf2autobot/tf2-sku');
 const filterAxiosError = require('@tf2autobot/filter-axios-error');
 
@@ -10,6 +10,32 @@ const EventEmitter = require('events').EventEmitter;
 const Listing = require('./classes/listing');
 
 const EFailiureReason = require('./resources/EFailureReason');
+
+async function axios(options) {
+    try {
+        return await _axios(options);
+    } catch (err) {
+        if (err?.response?.status === 429) {
+            // Too many request error
+
+            const s = err.response.data?.message?.match(/in \d+ second/);
+            const sleepTime = err.response['Retry-After'] ?? (s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) : null);
+            const sleepRateLimited = err.response.data?.retry_after || sleepTime * 1000 || 10000;
+            let more;
+            if (err.response.data) {
+                try{
+                    more=JSON.stringify(err.response.data)
+                } catch {
+                    more=err.response.data
+                }
+            }
+            console.warn(`Rate limited for ${sleepTime} seconds for ${options.url}.${more?` ${more}`:''}`);
+            await new Promise(r => setTimeout(() => r(), sleepRateLimited));
+            return axios(options);
+        }
+        throw err;
+    }
+}
 
 class ListingManager {
     /**
@@ -461,6 +487,20 @@ class ListingManager {
 
             this._action('update', formatted);
         }
+    }
+
+    /**
+     * Enqueus a list of listings or listing ids to be removed
+     * @param {Array<Object>|Array<String>} listings
+     */
+    removeListings(listings) {
+        if (!this.ready) {
+            throw new Error('Module has not been successfully initialized');
+        }
+
+        const formatted = listings.map(value => (!isObject(value) ? value : value.id));
+
+        this._action('remove', formatted);
     }
 
     /**
@@ -965,6 +1005,11 @@ class ListingManager {
                 ? this.actions.remove.slice(0, this.batchSize)
                 : this.actions.remove;
 
+        if (remove.length === 0) {
+            callback(null, null);
+            return;
+        }
+
         //keep using old api, as it does not seem to have any item limit
         const options = this.setRequestOptions('DELETE', '/classifieds/delete/v1', {
             listing_ids: remove
@@ -1055,8 +1100,6 @@ class ListingManager {
      */
     deleteAllListings(intent, callback) {
         if (typeof intent === 'function' && !callback) callback = intent;
-
-        //TODO: ratelimit - 60 sec
 
         const options = this.setRequestOptions('DELETE', `/v2/classifieds/listings`);
 
