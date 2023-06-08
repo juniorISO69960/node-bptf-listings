@@ -17,8 +17,9 @@ async function axios(options) {
     } catch (err) {
         if (err?.response?.status === 429) {
             // Too many request error
+
             const s = err.response.data?.message?.match(/in \d+ second/);
-            const sleepTime = s ?  (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) : null;
+            const sleepTime = err.response['Retry-After'] ?? (s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) : null);
             const sleepRateLimited = err.response.data?.retry_after || sleepTime * 1000 || 10000;
             let more;
             if (err.response.data) {
