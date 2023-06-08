@@ -19,17 +19,19 @@ async function axios(options) {
             // Too many request error
 
             const s = err.response.data?.message?.match(/in \d+ second/);
-            const sleepTime = err.response['Retry-After'] ?? (s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) : null);
+            const sleepTime =
+                err.response['Retry-After'] ??
+                (s ? parseInt(s[0].replace('in ', '').replace(' second', '')) + 1 : null);
             const sleepRateLimited = err.response.data?.retry_after || sleepTime * 1000 || 10000;
             let more;
             if (err.response.data) {
-                try{
-                    more=JSON.stringify(err.response.data)
+                try {
+                    more = JSON.stringify(err.response.data);
                 } catch {
-                    more=err.response.data
+                    more = err.response.data;
                 }
             }
-            console.warn(`Rate limited for ${sleepTime} seconds for ${options.url}.${more?` ${more}`:''}`);
+            console.warn(`Rate limited for ${sleepTime} seconds for ${options.url}.${more ? ` ${more}` : ''}`);
             await new Promise(r => setTimeout(() => r(), sleepRateLimited));
             return axios(options);
         }
@@ -723,54 +725,59 @@ class ListingManager {
 
         this._processingActions = true;
 
-        setTimeout(() => {
-            async.series(
-                {
-                    update: callback => {
-                        this._update(callback);
+        setTimeout(
+            () => {
+                async.series(
+                    {
+                        update: callback => {
+                            this._update(callback);
+                        },
+                        delete: callback => {
+                            this._delete(callback);
+                        },
+                        create: callback => {
+                            this._create(callback);
+                        }
                     },
-                    delete: callback => {
-                        this._delete(callback);
-                    },
-                    create: callback => {
-                        this._create(callback);
-                    }
-                },
-                (err, result) => {
-                    // TODO: Only get listings if we created or deleted listings
+                    (err, result) => {
+                        // TODO: Only get listings if we created or deleted listings
 
-                    if (err?.response?.status === 429) {
-                        // Too many request error
-                        const s = err.response.data?.message?.match(/in \d+ second/);
-                        const sleepTime = s ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) * 1000 : null;
-                        this.sleepRateLimited = err.response.data?.retry_after || sleepTime || 10000;
-                        this.isRateLimited = true;
+                        if (err?.response?.status === 429) {
+                            // Too many request error
+                            const s = err.response.data?.message?.match(/in \d+ second/);
+                            const sleepTime = s
+                                ? (parseInt(s[0].replace('in ', '').replace(' second', '')) + 1) * 1000
+                                : null;
+                            this.sleepRateLimited = err.response.data?.retry_after || sleepTime || 10000;
+                            this.isRateLimited = true;
 
-                        this._processingActions = false;
-                        this._processActions();
-
-                        return callback(null);
-                    }
-
-                    if (
-                        this.actions.remove.length !== 0 ||
-                        this.actions.update.length !== 0 ||
-                        this._listingsWaitingForRetry() - this.actions.create.length !== 0
-                    ) {
-                        this._processingActions = false;
-                        // There are still things to do
-                        this._processActions();
-                        callback(null);
-                    } else {
-                        // Queues are empty, get listings
-                        this.getListings(false, () => {
                             this._processingActions = false;
+                            this._processActions();
+
+                            return callback(null);
+                        }
+
+                        if (
+                            this.actions.remove.length !== 0 ||
+                            this.actions.update.length !== 0 ||
+                            this._listingsWaitingForRetry() - this.actions.create.length !== 0
+                        ) {
+                            this._processingActions = false;
+                            // There are still things to do
+                            this._processActions();
                             callback(null);
-                        });
+                        } else {
+                            // Queues are empty, get listings
+                            this.getListings(false, () => {
+                                this._processingActions = false;
+                                callback(null);
+                            });
+                        }
                     }
-                }
-            );
-        }, this.isRateLimited ? this.sleepRateLimited + this.waitTime : this.waitTime);
+                );
+            },
+            this.isRateLimited ? this.sleepRateLimited + this.waitTime : this.waitTime
+        );
 
         if (this.isRateLimited) {
             this.isRateLimited = false;
