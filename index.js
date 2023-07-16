@@ -632,7 +632,7 @@ class ListingManager {
         );
         this._inventoryInterval = setInterval(
             ListingManager.prototype._updateInventory.bind(this, () => {}),
-            60000
+            180000 // 3 minutes
         );
         this._getBatchOpLimitInterval = setInterval(
             ListingManager.prototype.getBatchOpLimit.bind(this, () => {}),
