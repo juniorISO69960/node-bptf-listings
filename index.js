@@ -863,11 +863,6 @@ class ListingManager {
 
                 this.actions.create = this.actions.create.filter(formatted => {
                     if (formatted.intent === 1 && waitForInventory.includes(formatted.id)) {
-                        if (formatted.attempt !== undefined) {
-                            // We have already tried to list before, remove it from the queue
-                            return false;
-                        }
-
                         // We should wait for the inventory to update
                         formatted.attempt = this._lastInventoryUpdate;
                         return true;
