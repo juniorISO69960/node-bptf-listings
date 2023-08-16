@@ -1536,7 +1536,8 @@ function getAllArchivedListings(skip, headers, token, archivedListings, callback
         headers,
         params: {
             token,
-            skip
+            skip,
+            limit: 1000
         }
     };
 
