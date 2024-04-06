@@ -23,7 +23,7 @@
     "@tf2autobot/tf2-currencies": "^2.0.1",
     "@tf2autobot/tf2-sku": "^2.0.4",
     "async": "^3.2.4",
-    "axios": "^1.4.0",
+    "axios": "^1.6.8",
     "events": "^3.3.0",
     "steamid": "^2.0.0",
     "util": "^0.12.5"
