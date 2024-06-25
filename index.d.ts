@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import EventEmitter from 'events';
 import SchemaManager from '@tf2autobot/tf2-schema';
 import SteamID from 'steamid';
 import TF2Currencies from '@tf2autobot/tf2-currencies';
